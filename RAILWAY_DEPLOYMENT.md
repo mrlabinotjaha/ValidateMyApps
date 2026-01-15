@@ -44,16 +44,19 @@ In your Railway project, go to the service settings and add these environment va
 - `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins (defaults to Railway domain)
 - `RAILWAY_VOLUME_MOUNT_PATH` - Path for persistent storage (if you add a volume)
 
-### 5. Set Build and Start Commands
+### 5. Configure Service Root Directory (Important!)
 
-Railway should auto-detect your setup, but you can verify in the service settings:
+**CRITICAL**: Make sure Railway's service root directory is set to the repository root (`.`), not `frontend` or `backend`.
 
-**Build Command (if needed):**
-```bash
-cd frontend && npm ci && npm run build && mkdir -p ../backend/static && cp -r dist/* ../backend/static/
-```
+1. Go to your service settings in Railway
+2. Scroll to "Root Directory" 
+3. Ensure it's set to `.` (project root) or leave it blank
 
-**Start Command:**
+### 6. Set Build and Start Commands
+
+Railway should auto-detect your setup via `nixpacks.toml`, but you can verify in the service settings:
+
+**Start Command (should be auto-detected):**
 ```bash
 cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
@@ -62,8 +65,9 @@ Railway will automatically:
 - Detect Python and install dependencies from `backend/requirements.txt`
 - Detect Node.js and install frontend dependencies
 - Build the frontend and serve it from the backend
+- Use the `nixpacks.toml` configuration for the build process
 
-### 6. Add Volume for Uploads (Optional but Recommended)
+### 7. Add Volume for Uploads (Optional but Recommended)
 
 To persist uploaded images across deployments:
 
@@ -72,7 +76,7 @@ To persist uploaded images across deployments:
 3. Set mount path (e.g., `/data`)
 4. Add environment variable: `RAILWAY_VOLUME_MOUNT_PATH=/data`
 
-### 7. Deploy
+### 8. Deploy
 
 1. Railway will automatically start building and deploying
 2. Once deployed, Railway will provide a public URL (e.g., `yourapp.up.railway.app`)
@@ -108,9 +112,11 @@ The app will automatically create tables on first run. To populate with test dat
 
 ### Build Fails
 
+- **Check Service Root Directory**: In Railway service settings, ensure "Root Directory" is set to `.` (project root), not `frontend` or `backend`
 - Check that `backend/requirements.txt` exists and is correct
 - Verify Node.js version in `package.json` (Railway supports Node 18+)
 - Check build logs in Railway dashboard
+- If paths are wrong, Railway might be building from a subdirectory - verify the root directory setting
 
 ### Database Connection Errors
 
