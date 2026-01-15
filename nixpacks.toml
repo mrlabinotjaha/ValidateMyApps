@@ -2,9 +2,8 @@
 NODE_ENV = "production"
 PYTHONUNBUFFERED = "1"
 
-[providers]
-python = "3.9"
-node = "20"
+# Providers: let Nixpacks auto-detect or explicitly specify
+providers = ["node", "python"]
 
 [phases.setup]
 nixPkgs = ["nodejs_20", "python39"]
