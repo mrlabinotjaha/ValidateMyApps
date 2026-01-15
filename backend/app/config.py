@@ -1,0 +1,58 @@
+from pydantic_settings import BaseSettings
+from typing import List
+import os
+
+
+class Settings(BaseSettings):
+    # Railway will provide DATABASE_URL automatically
+    database_url: str
+    secret_key: str = "change-this-secret-key-in-production"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 43200  # 30 days
+    upload_dir: str = ""
+    allowed_origins: List[str] = []
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = False
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Handle Railway DATABASE_URL - convert postgres:// to postgresql:// for SQLAlchemy
+        if self.database_url.startswith("postgres://"):
+            self.database_url = self.database_url.replace("postgres://", "postgresql://", 1)
+        
+        # Set upload directory - use Railway volume if available
+        if os.getenv("RAILWAY_VOLUME_MOUNT_PATH"):
+            self.upload_dir = os.path.join(os.getenv("RAILWAY_VOLUME_MOUNT_PATH"), "uploads")
+        else:
+            self.upload_dir = "./uploads"
+        
+        # Set allowed origins - include Railway domain
+        origins = ["http://localhost:5173"]
+        
+        # Add Railway public domain if available
+        if os.getenv("RAILWAY_PUBLIC_DOMAIN"):
+            railway_url = f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}"
+            origins.append(railway_url)
+        
+        # For Railway, allow requests from same origin (when frontend is served from backend)
+        if os.getenv("RAILWAY_ENVIRONMENT"):
+            # Allow all origins since we're serving frontend from same domain
+            origins = ["*"]
+        
+        # Set from environment variable if provided (comma-separated)
+        if os.getenv("ALLOWED_ORIGINS"):
+            env_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS").split(",")]
+            if "*" in env_origins:
+                origins = ["*"]
+            else:
+                origins.extend(env_origins)
+        
+        self.allowed_origins = origins
+        
+        # Ensure upload directory exists
+        os.makedirs(self.upload_dir, exist_ok=True)
+
+
+settings = Settings()
