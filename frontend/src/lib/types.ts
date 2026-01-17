@@ -142,6 +142,7 @@ export interface Team {
   app_count?: number
   project_count?: number // Deprecated - use app_count instead
   invitation_status?: 'pending' | null
+  invitation_id?: string | null
 }
 
 export interface TeamMember {

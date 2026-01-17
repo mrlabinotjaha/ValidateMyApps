@@ -9,11 +9,15 @@ import {
   Search,
   ArrowRight,
   CheckCircle2,
+  Pin,
+  Lightbulb,
 } from "lucide-react";
 import type { User } from "../lib/auth";
 import type { Team } from "../lib/types";
+import { usePinnedTeam } from "../lib/pinnedTeam";
 import ThemeToggle from "../components/ThemeToggle";
 import NavUser from "../components/NavUser";
+import NotificationBell from "../components/NotificationBell";
 import { Card } from "../components/ui/card";
 import { api } from "../lib/api";
 
@@ -70,25 +74,14 @@ export default function Projects({ user }: ProjectsProps) {
   );
 
   const handleAcceptInvitation = async (team: Team) => {
-    // Find the invitation ID - we'll need to fetch it or get it from the team data
-    // For now, let's get invitations for this team
-    try {
-      const invitationsResponse = await api.get(
-        `/teams/${team.id}/invitations`
-      );
-      const invitations = invitationsResponse.data;
-      const pendingInv = invitations.find(
-        (inv: any) => inv.status === "pending" && inv.email === user?.email
-      );
-
-      if (pendingInv) {
-        acceptInvitationMutation.mutate({
-          teamId: team.id,
-          invitationId: pendingInv.id,
-        });
-      }
-    } catch (error) {
-      console.error("Error accepting invitation:", error);
+    // Use the invitation_id directly from the team data
+    if (team.invitation_id) {
+      acceptInvitationMutation.mutate({
+        teamId: team.id,
+        invitationId: team.invitation_id,
+      });
+    } else {
+      console.error("No invitation ID found for team:", team.id);
     }
   };
 
@@ -106,6 +99,8 @@ export default function Projects({ user }: ProjectsProps) {
       </div>
     );
   }
+
+  const { pinnedTeam } = usePinnedTeam();
 
   return (
     <div className="min-h-screen bg-background">
@@ -125,14 +120,32 @@ export default function Projects({ user }: ProjectsProps) {
                 </Link>
                 <Link
                   to="/projects"
-                  className="text-sm font-medium text-foreground"
+                  className="text-sm font-medium text-foreground inline-flex items-center gap-1"
                 >
+                  <FolderKanban className="w-4 h-4" />
                   Team Projects
                 </Link>
+                <Link
+                  to="/requests"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  App Requests
+                </Link>
+                {pinnedTeam && (
+                  <Link
+                    to={`/teams/${pinnedTeam.id}`}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md border border-primary/20"
+                  >
+                    <Pin className="w-3 h-3 text-primary" />
+                    <span className="text-primary font-medium">{pinnedTeam.name}</span>
+                  </Link>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
               <ThemeToggle />
+              <NotificationBell />
               <NavUser user={user} />
             </div>
           </div>

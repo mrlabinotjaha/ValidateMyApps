@@ -80,7 +80,7 @@ export default function AppCard({ app, user }: AppCardProps) {
                 {app.name}
               </h3>
               <p className="text-xs text-muted-foreground">
-                by {ownerLabel}
+                by
                 {isMyApp && (
                   <span className="ml-1.5 px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-medium">
                     YOU

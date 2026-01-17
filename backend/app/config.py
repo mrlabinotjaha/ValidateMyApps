@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     upload_dir: str = ""
     allowed_origins: List[str] = []
 
+    # Google OAuth
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = ""
+    frontend_url: str = "http://localhost:5173"
+
     class Config:
         env_file = ".env"
         case_sensitive = False
@@ -50,7 +56,20 @@ class Settings(BaseSettings):
                 origins.extend(env_origins)
         
         self.allowed_origins = origins
-        
+
+        # Set frontend URL for OAuth redirects
+        if os.getenv("FRONTEND_URL"):
+            self.frontend_url = os.getenv("FRONTEND_URL")
+        elif os.getenv("RAILWAY_PUBLIC_DOMAIN"):
+            self.frontend_url = f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}"
+
+        # Set Google OAuth redirect URI
+        if not self.google_redirect_uri and self.google_client_id:
+            if os.getenv("RAILWAY_PUBLIC_DOMAIN"):
+                self.google_redirect_uri = f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}/api/auth/google/callback"
+            else:
+                self.google_redirect_uri = "http://localhost:8000/api/auth/google/callback"
+
         # Ensure upload directory exists
         os.makedirs(self.upload_dir, exist_ok=True)
 

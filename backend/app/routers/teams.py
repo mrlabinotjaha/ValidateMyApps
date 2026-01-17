@@ -68,7 +68,9 @@ def get_teams(
             TeamInvitation.status == InvitationStatus.pending
         ).all()
         
-        invitation_team_ids = {inv.team_id for inv in pending_invitations}
+        # Create a map of team_id -> invitation for quick lookup
+        invitation_map = {inv.team_id: inv for inv in pending_invitations}
+        invitation_team_ids = set(invitation_map.keys())
         
         # Get teams for pending invitations
         if invitation_team_ids:
@@ -78,8 +80,10 @@ def get_teams(
         result = []
         for team in teams:
             invitation_status = None
+            invitation_id = None
             if team.id in invitation_team_ids:
                 invitation_status = 'pending'
+                invitation_id = str(invitation_map[team.id].id)
             
             result.append({
                 "id": team.id,
@@ -95,7 +99,8 @@ def get_teams(
                 },
                 "member_count": len(team.members),
                 "app_count": len(team.apps),
-                "invitation_status": invitation_status
+                "invitation_status": invitation_status,
+                "invitation_id": invitation_id
             })
         
         return result

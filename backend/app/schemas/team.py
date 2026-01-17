@@ -51,6 +51,7 @@ class TeamListItem(TeamBase):
     member_count: int = 0
     app_count: int = 0
     invitation_status: Optional[str] = None  # 'pending' if user has pending invitation
+    invitation_id: Optional[str] = None  # ID of the pending invitation for the user
 
     class Config:
         from_attributes = True

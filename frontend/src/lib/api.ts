@@ -97,7 +97,12 @@ export const api = USE_MOCK_DATA ? mockApi : (() => {
           processQueue(refreshError, null);
           localStorage.removeItem('access_token');
           isRefreshing = false;
-          window.location.href = '/login';
+
+          // Don't redirect if already on auth pages (prevents error flash)
+          const path = window.location.pathname;
+          if (!path.startsWith('/login') && !path.startsWith('/register')) {
+            window.location.href = '/login';
+          }
           return Promise.reject(refreshError);
         }
       }

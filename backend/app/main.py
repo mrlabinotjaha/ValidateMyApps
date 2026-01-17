@@ -6,7 +6,8 @@ from pathlib import Path
 import os
 from .config import settings
 from .database import engine, Base
-from .routers import auth, apps, images, tags, votes, comments, annotations, teams
+from .routers import auth, apps, images, tags, votes, comments, annotations, teams, app_requests, notifications
+from .models import app_request, claim_request, notification  # Import to register the models
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -30,6 +31,8 @@ app.include_router(votes.router)
 app.include_router(comments.router)
 app.include_router(annotations.router)
 app.include_router(teams.router)
+app.include_router(app_requests.router)
+app.include_router(notifications.router)
 
 @app.get("/api/health")
 def health_check():
