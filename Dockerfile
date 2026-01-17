@@ -32,5 +32,8 @@ RUN mkdir -p /app/uploads
 # Expose port
 EXPOSE 8000
 
-# Start command
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Set working directory for the app
+WORKDIR /app
+
+# Start command - use shell form to handle $PORT
+CMD python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
