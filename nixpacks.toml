@@ -1,28 +1,25 @@
-# Providers must be at root level (before any sections)
-providers = ["node", "python"]
+# Nixpacks configuration for Railway deployment
+providers = ["python", "node"]
 
 [variables]
 NODE_ENV = "production"
 PYTHONUNBUFFERED = "1"
 
 [phases.setup]
-nixPkgs = ["nodejs_20", "python39"]
+nixPkgs = ["python311", "nodejs_20"]
 
 [phases.install]
-# Install frontend and backend dependencies
-# Each command runs from project root
 cmds = [
-  "npm ci --prefix ./frontend",
-  "pip install --requirement ./backend/requirements.txt"
+  "cd frontend && npm ci",
+  "cd backend && pip install -r requirements.txt"
 ]
 
 [phases.build]
-# Build frontend and copy static files to backend
 cmds = [
-  "npm run build --prefix ./frontend",
-  "mkdir --parents ./backend/static",
-  "cp --recursive ./frontend/dist/* ./backend/static/"
+  "cd frontend && npm run build",
+  "mkdir -p backend/static",
+  "cp -r frontend/dist/* backend/static/"
 ]
 
 [start]
-cmd = "cd ./backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+cmd = "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
