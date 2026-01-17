@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { ThumbsUp, AppWindow, Clock, User as UserIcon } from "lucide-react";
+import { ThumbsUp, Clock } from "lucide-react";
 import { Card } from "./ui/card";
 import type { App } from "../lib/types";
 import type { User } from "../lib/auth";
@@ -12,9 +12,6 @@ interface AppCardProps {
 
 export default function AppCard({ app, user }: AppCardProps) {
   const isMyApp = user && app.creator_id === user.id;
-  const ownerLabel = isMyApp
-    ? "ME"
-    : app.creator?.full_name || app.creator?.username || "Unknown";
   const progressValue = app.progress ?? 0;
   const [imageError, setImageError] = useState(false);
 
