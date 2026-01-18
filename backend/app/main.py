@@ -7,7 +7,8 @@ import os
 from .config import settings
 from .database import engine, Base
 from .routers import auth, apps, images, tags, votes, comments, annotations, teams, app_requests, notifications
-from .models import app_request, claim_request, notification  # Import to register the models
+# Import all models to register them with SQLAlchemy
+from .models import user, app, team, image, tag, vote, comment, annotation, app_request, claim_request, notification
 
 # Create tables
 Base.metadata.create_all(bind=engine)
