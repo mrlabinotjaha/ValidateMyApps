@@ -6,8 +6,25 @@ const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK === 'true';
 
 // In production, use relative URL if VITE_API_URL is not set (same domain)
 // This works when frontend is served from the same backend
-const API_URL = import.meta.env.VITE_API_URL || 
+const API_URL = import.meta.env.VITE_API_URL ||
   (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
+
+// Base URL for uploads/images - use same origin in production
+const UPLOAD_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:8000';
+
+/**
+ * Get the full URL for an image/upload path
+ * Handles both relative paths (/uploads/...) and absolute URLs (http://..., data:...)
+ */
+export function getImageUrl(path: string | undefined | null): string {
+  if (!path) return '';
+  // Already absolute URL or data URL
+  if (path.startsWith('http') || path.startsWith('data:')) {
+    return path;
+  }
+  // Relative path - prepend base URL
+  return `${UPLOAD_BASE_URL}${path}`;
+}
 
 // Track if we're currently refreshing to avoid multiple refresh attempts
 let isRefreshing = false;

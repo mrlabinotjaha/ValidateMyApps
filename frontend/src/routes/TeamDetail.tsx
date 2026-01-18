@@ -10,7 +10,7 @@ import NavUser from '../components/NavUser'
 import NotificationBell from '../components/NotificationBell'
 import { Card } from '../components/ui/card'
 import AppCard from '../components/AppCard'
-import { api } from '../lib/api'
+import { api, getImageUrl } from '../lib/api'
 
 type GridSize = 3 | 4 | 5
 type ViewMode = 'grid' | 'list'
@@ -150,12 +150,7 @@ export default function TeamDetail({ user }: TeamDetailProps) {
                 </div>
               ) : (
                 <img
-                  src={
-                    app.images[0].image_url.startsWith('data:') ||
-                    app.images[0].image_url.startsWith('http')
-                      ? app.images[0].image_url
-                      : `http://localhost:8000${app.images[0].image_url}`
-                  }
+                  src={getImageUrl(app.images[0].image_url)}
                   alt={app.name}
                   className="w-12 h-12 rounded-lg object-cover"
                 />

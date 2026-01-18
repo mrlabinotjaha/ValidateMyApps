@@ -22,7 +22,7 @@ import {
   Share2,
   Pin,
 } from "lucide-react";
-import { api } from "../lib/api";
+import { api, getImageUrl } from "../lib/api";
 import type { User } from "../lib/auth";
 import type { Team, App, VoteInfo, AppTask } from "../lib/types";
 import { usePinnedTeam } from "../lib/pinnedTeam";
@@ -349,12 +349,7 @@ export default function AppDetail({ user }: AppDetailProps) {
           <div className="relative bg-secondary/50 rounded-lg p-4 flex-1">
             <div className="flex items-center justify-center h-full min-h-[300px] relative">
               <img
-                src={
-                  images[selectedImageIndex]?.image_url.startsWith("data:") ||
-                  images[selectedImageIndex]?.image_url.startsWith("http")
-                    ? images[selectedImageIndex].image_url
-                    : `http://localhost:8000${images[selectedImageIndex]?.image_url}`
-                }
+                src={getImageUrl(images[selectedImageIndex]?.image_url)}
                 alt={`${app.name} - Image ${selectedImageIndex + 1}`}
                 className="max-h-[350px] max-w-full object-contain rounded-lg"
               />
@@ -437,12 +432,7 @@ export default function AppDetail({ user }: AppDetailProps) {
                   aria-label={`View image ${idx + 1}`}
                 >
                   <img
-                    src={
-                      image.image_url.startsWith("data:") ||
-                      image.image_url.startsWith("http")
-                        ? image.image_url
-                        : `http://localhost:8000${image.image_url}`
-                    }
+                    src={getImageUrl(image.image_url)}
                     alt={`Thumbnail ${idx + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -1046,16 +1036,7 @@ export default function AppDetail({ user }: AppDetailProps) {
                   <div className="relative bg-secondary/50 p-4">
                     <div className="flex items-center justify-center min-h-[400px] relative">
                       <img
-                        src={
-                          images[selectedImageIndex]?.image_url.startsWith(
-                            "data:"
-                          ) ||
-                          images[selectedImageIndex]?.image_url.startsWith(
-                            "http"
-                          )
-                            ? images[selectedImageIndex].image_url
-                            : `http://localhost:8000${images[selectedImageIndex]?.image_url}`
-                        }
+                        src={getImageUrl(images[selectedImageIndex]?.image_url)}
                         alt={`${app.name} - Image ${selectedImageIndex + 1}`}
                         className="max-h-[400px] max-w-full object-contain rounded-lg"
                       />
@@ -1109,12 +1090,7 @@ export default function AppDetail({ user }: AppDetailProps) {
                             aria-label={`View image ${idx + 1}`}
                           >
                             <img
-                              src={
-                                image.image_url.startsWith("data:") ||
-                                image.image_url.startsWith("http")
-                                  ? image.image_url
-                                  : `http://localhost:8000${image.image_url}`
-                              }
+                              src={getImageUrl(image.image_url)}
                               alt={`Thumbnail ${idx + 1}`}
                               className="w-full h-full object-cover"
                             />

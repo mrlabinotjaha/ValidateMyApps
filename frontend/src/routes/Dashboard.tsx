@@ -16,7 +16,7 @@ import {
   Pin,
   Lightbulb,
 } from "lucide-react";
-import { api } from "../lib/api";
+import { api, getImageUrl } from "../lib/api";
 import type { User } from "../lib/auth";
 import type { App } from "../lib/types";
 import { usePinnedTeam } from "../lib/pinnedTeam";
@@ -147,12 +147,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 </div>
               ) : (
                 <img
-                  src={
-                    app.images[0].image_url.startsWith("data:") ||
-                    app.images[0].image_url.startsWith("http")
-                      ? app.images[0].image_url
-                      : `http://localhost:8000${app.images[0].image_url}`
-                  }
+                  src={getImageUrl(app.images[0].image_url)}
                   alt={app.name}
                   className="w-12 h-12 rounded-lg object-cover"
                 />
@@ -283,169 +278,31 @@ export default function Dashboard({ user }: DashboardProps) {
 
       <main className="max-w-[1600px] mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="mb-6 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-            {/* Search */}
-            <div className="relative w-48 sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search apps..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-ring"
-              />
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+              <FolderKanban className="w-12 h-12 text-primary" />
             </div>
-
-            {/* View Controls + New App Button */}
-            <div className="flex items-center gap-3">
-              {/* Group by Creator Toggle */}
-              <button
-                onClick={() => setGroupByCreator(!groupByCreator)}
-                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                  groupByCreator
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-                title="Group by creator"
+            <h1 className="text-3xl font-bold text-foreground mb-4">Public Apps Coming Soon</h1>
+            <p className="text-muted-foreground mb-8 max-w-md">
+              We're working on something exciting. In the meantime, check out Team Projects or App Requests.
+            </p>
+            <div className="flex gap-4">
+              <Link
+                to="/projects"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
-                <Users className="w-4 h-4" />
-                <span className="hidden sm:inline">Group by Creator</span>
-              </button>
-
-              {/* View Mode Toggle */}
-              <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-md transition-colors ${
-                    viewMode === "grid"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Grid view"
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-md transition-colors ${
-                    viewMode === "list"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="List view"
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Grid Size Selector (only show in grid mode) */}
-              {viewMode === "grid" && (
-                <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
-                  <button
-                    onClick={() => setGridSize(3)}
-                    className={`p-2 rounded-md transition-colors ${
-                      gridSize === 3
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                    title="3 per row"
-                  >
-                    <Grid2X2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setGridSize(4)}
-                    className={`p-2 rounded-md transition-colors ${
-                      gridSize === 4
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                    title="4 per row"
-                  >
-                    <Grid3X3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setGridSize(5)}
-                    className={`p-2 rounded-md transition-colors ${
-                      gridSize === 5
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                    title="5 per row"
-                  >
-                    <LayoutGrid className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-
-              {/* New App Button */}
-              {user && (
-                <Link
-                  to="/apps/new"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  New App
-                </Link>
-              )}
+                <FolderKanban className="w-5 h-5" />
+                Team Projects
+              </Link>
+              <Link
+                to="/requests"
+                className="inline-flex items-center gap-2 px-6 py-3 border border-border rounded-lg hover:bg-muted transition-colors"
+              >
+                <Lightbulb className="w-5 h-5" />
+                App Requests
+              </Link>
             </div>
           </div>
-
-          {isLoading ? (
-            <div className="text-center py-12 text-muted-foreground">
-              Loading...
-            </div>
-          ) : apps && apps.length > 0 ? (
-            groupByCreator && groupedApps ? (
-              // Grouped view
-              <div className="space-y-8">
-                {Object.entries(groupedApps).map(
-                  ([creatorName, creatorApps]) => (
-                    <div key={creatorName}>
-                      <h2 className="text-2xl font-bold text-foreground mb-4">
-                        {creatorName}: all apps ({creatorApps.length})
-                      </h2>
-                      {viewMode === "grid" ? (
-                        <div className={`grid ${gridClasses[gridSize]} gap-6`}>
-                          {creatorApps.map((app: App) => (
-                            <AppCard key={app.id} app={app} user={user} />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {creatorApps.map((app: App) => (
-                            <AppListItem key={app.id} app={app} user={user} />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                )}
-              </div>
-            ) : viewMode === "grid" ? (
-              // Ungrouped grid view
-              <div className={`grid ${gridClasses[gridSize]} gap-6`}>
-                {apps.map((app: App) => (
-                  <AppCard key={app.id} app={app} user={user} />
-                ))}
-              </div>
-            ) : (
-              // Ungrouped list view
-              <div className="space-y-2">
-                {apps.map((app: App) => (
-                  <AppListItem key={app.id} app={app} user={user} />
-                ))}
-              </div>
-            )
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              No apps found.{" "}
-              {user && (
-                <Link to="/apps/new" className="text-primary hover:underline">
-                  Create one!
-                </Link>
-              )}
-            </div>
-          )}
         </div>
       </main>
     </div>

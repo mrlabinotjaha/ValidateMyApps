@@ -4,6 +4,7 @@ import { ThumbsUp, Clock } from "lucide-react";
 import { Card } from "./ui/card";
 import type { App } from "../lib/types";
 import type { User } from "../lib/auth";
+import { getImageUrl } from "../lib/api";
 
 interface AppCardProps {
   app: App;
@@ -61,12 +62,7 @@ export default function AppCard({ app, user }: AppCardProps) {
               </div>
             ) : (
               <img
-                src={
-                  app.images[0].image_url.startsWith("data:") ||
-                  app.images[0].image_url.startsWith("http")
-                    ? app.images[0].image_url
-                    : `http://localhost:8000${app.images[0].image_url}`
-                }
+                src={getImageUrl(app.images[0].image_url)}
                 alt={app.name}
                 className="w-10 h-10 rounded-lg object-cover"
                 onError={() => setImageError(true)}
