@@ -21,6 +21,13 @@ import {
   ChevronUp,
   Share2,
   Pin,
+  MessageSquare,
+  TrendingUp,
+  Calendar,
+  CheckCircle2,
+  Circle,
+  MoreHorizontal,
+  ExternalLink,
 } from "lucide-react";
 import { api, getImageUrl } from "../lib/api";
 import type { User } from "../lib/auth";
@@ -28,8 +35,8 @@ import type { Team, App, VoteInfo, AppTask } from "../lib/types";
 import { usePinnedTeam } from "../lib/pinnedTeam";
 import CommentSection from "../components/CommentSection";
 import ThemeToggle from "../components/ThemeToggle";
+import RepositorySection from "../components/RepositorySection";
 import { Card } from "../components/ui/card";
-import AppCard from "../components/AppCard";
 
 interface AppDetailProps {
   user: User | null;
@@ -51,6 +58,8 @@ export default function AppDetail({ user }: AppDetailProps) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [editingRepoUrl, setEditingRepoUrl] = useState(false);
+  const [repoUrlValue, setRepoUrlValue] = useState("");
 
   const { pinnedTeam } = usePinnedTeam();
 
@@ -62,7 +71,6 @@ export default function AppDetail({ user }: AppDetailProps) {
     },
   });
 
-  // Fetch the team if the app belongs to one
   const { data: team } = useQuery({
     queryKey: ["team", app?.team_id],
     queryFn: async () => {
@@ -74,7 +82,6 @@ export default function AppDetail({ user }: AppDetailProps) {
 
   const isOwner = user && app?.creator_id === user.id;
 
-  // Update app mutation
   const updateAppMutation = useMutation({
     mutationFn: async (data: Partial<App>) => {
       return api.put(`/apps/${id}`, data);
@@ -84,7 +91,6 @@ export default function AppDetail({ user }: AppDetailProps) {
     },
   });
 
-  // Task mutations
   const addTaskMutation = useMutation({
     mutationFn: async (title: string) => {
       return api.post(`/apps/${id}/tasks`, { title });
@@ -123,7 +129,6 @@ export default function AppDetail({ user }: AppDetailProps) {
     accept: { "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"] },
     onDrop: async (acceptedFiles) => {
       if (acceptedFiles.length === 0 || !id) return;
-
       setUploading(true);
       try {
         for (const file of acceptedFiles) {
@@ -141,8 +146,6 @@ export default function AppDetail({ user }: AppDetailProps) {
       }
     },
     disabled: uploading,
-    noClick: false,
-    noKeyboard: false,
   });
 
   const { data: voteStats } = useQuery({
@@ -173,7 +176,6 @@ export default function AppDetail({ user }: AppDetailProps) {
     addTaskMutation.mutate(newTaskTitle.trim());
   };
 
-  // Sync edit values with app data
   useEffect(() => {
     if (app) {
       setEditValues({
@@ -182,19 +184,13 @@ export default function AppDetail({ user }: AppDetailProps) {
         full_description: app.full_description || "",
         status: app.status,
       });
+      setRepoUrlValue(app.repository_url || "");
     }
   }, [app]);
 
-  // Editing handlers
   const startEditing = (field: string) => {
     if (!app) return;
     setEditingField(field);
-    setEditValues({
-      name: app.name,
-      short_description: app.short_description,
-      full_description: app.full_description || "",
-      status: app.status,
-    });
   };
 
   const cancelEditing = () => {
@@ -211,33 +207,20 @@ export default function AppDetail({ user }: AppDetailProps) {
 
   const saveField = (field: string) => {
     if (!app) return;
-
     const updateData: any = {};
     if (field === "name") {
       updateData.name = editValues.name.trim();
-      if (!updateData.name) {
-        alert("Name cannot be empty");
-        return;
-      }
+      if (!updateData.name) return;
     } else if (field === "short_description") {
       updateData.short_description = editValues.short_description.trim();
-      if (!updateData.short_description) {
-        alert("Short description cannot be empty");
-        return;
-      }
+      if (!updateData.short_description) return;
     } else if (field === "full_description") {
       updateData.full_description = editValues.full_description.trim();
     } else if (field === "status") {
       updateData.status = editValues.status;
     }
-
     updateAppMutation.mutate(updateData, {
-      onSuccess: () => {
-        setEditingField(null);
-      },
-      onError: () => {
-        // Keep editing on error
-      },
+      onSuccess: () => setEditingField(null),
     });
   };
 
@@ -250,7 +233,6 @@ export default function AppDetail({ user }: AppDetailProps) {
     }
   };
 
-  // Calculate auto progress based on completed tasks
   const tasks = app?.tasks || [];
   const completedTasks = tasks.filter((t) => t.is_completed).length;
   const autoProgress =
@@ -259,26 +241,17 @@ export default function AppDetail({ user }: AppDetailProps) {
     app?.progress_mode === "auto" ? autoProgress : app?.progress || 0;
   const images = app?.images || [];
 
-  // Reset selected image index when images change
   useEffect(() => {
     if (images.length > 0 && selectedImageIndex >= images.length) {
       setSelectedImageIndex(0);
     }
   }, [images.length, selectedImageIndex]);
 
-  // Keyboard navigation for images
   useEffect(() => {
     const imageCount = images.length;
     if (imageCount <= 1) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        return; // Don't interfere with text inputs
-      }
-
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         setSelectedImageIndex((prev) => (prev - 1 + imageCount) % imageCount);
@@ -287,37 +260,34 @@ export default function AppDetail({ user }: AppDetailProps) {
         setSelectedImageIndex((prev) => (prev + 1) % imageCount);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [images.length]);
 
-  // Close settings menu on Escape
   useEffect(() => {
     if (!showSettingsMenu) return;
-
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setShowSettingsMenu(false);
-      }
+      if (e.key === "Escape") setShowSettingsMenu(false);
     };
-
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, [showSettingsMenu]);
 
-  if (isLoading)
+  if (isLoading) {
     return (
-      <div className="text-center py-12 text-muted-foreground bg-background min-h-screen">
-        Loading...
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
-  if (!app)
+  }
+
+  if (!app) {
     return (
-      <div className="text-center py-12 text-muted-foreground bg-background min-h-screen">
-        App not found
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">App not found</div>
       </div>
     );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -331,448 +301,422 @@ export default function AppDetail({ user }: AppDetailProps) {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(window.location.href);
       alert("Link copied to clipboard!");
-    } catch (err) {
+    } catch {
       alert("Failed to copy link");
     }
   };
 
-  // Render Image Gallery Component (used in both layouts)
-  const renderImageGallery = () => (
-    <div className="h-full flex flex-col">
-      {images.length > 0 ? (
-        <>
-          {/* Main Image Display */}
-          <div className="relative bg-secondary/50 rounded-lg p-4 flex-1">
-            <div className="flex items-center justify-center h-full min-h-[300px] relative">
-              <img
-                src={getImageUrl(images[selectedImageIndex]?.image_url)}
-                alt={`${app.name} - Image ${selectedImageIndex + 1}`}
-                className="max-h-[350px] max-w-full object-contain rounded-lg"
-              />
-              {isOwner && (
-                <button
-                  onClick={async () => {
-                    if (confirm("Delete this image?")) {
-                      try {
-                        await api.delete(
-                          `/apps/images/${images[selectedImageIndex].id}`
-                        );
-                        queryClient.invalidateQueries({
-                          queryKey: ["app", id],
-                        });
-                        if (
-                          selectedImageIndex >= images.length - 1 &&
-                          selectedImageIndex > 0
-                        ) {
-                          setSelectedImageIndex(selectedImageIndex - 1);
-                        }
-                      } catch (error: any) {
-                        alert(
-                          error.response?.data?.detail ||
-                            "Failed to delete image"
-                        );
-                      }
-                    }
-                  }}
-                  className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors shadow-lg"
-                  title="Delete image"
-                  aria-label="Delete image"
+  // ============== OWNER VIEW ==============
+  if (isOwner) {
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Link
+                  to={team ? `/teams/${team.id}` : "/"}
+                  className="p-2 hover:bg-secondary rounded-lg transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <ArrowLeft className="w-5 h-5" />
+                </Link>
+                <div className="flex items-center gap-3">
+                  {editingField === "name" ? (
+                    <input
+                      type="text"
+                      value={editValues.name}
+                      onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
+                      onBlur={() => saveField("name")}
+                      onKeyDown={(e) => handleKeyDown(e, "name")}
+                      autoFocus
+                      className="text-xl font-bold bg-background border border-primary rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  ) : (
+                    <h1
+                      className="text-xl font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => startEditing("name")}
+                    >
+                      {app.name}
+                    </h1>
+                  )}
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(app.status)}`}>
+                    {app.status?.replace("_", " ").toUpperCase()}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleShare}
+                  className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                  title="Share"
+                >
+                  <Share2 className="w-4 h-4 text-muted-foreground" />
                 </button>
-              )}
-              {images.length > 1 && (
-                <>
+                <div className="relative">
                   <button
-                    onClick={() =>
-                      setSelectedImageIndex(
-                        (prev) => (prev - 1 + images.length) % images.length
-                      )
-                    }
-                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-background/80 hover:bg-background rounded-full shadow-lg transition-colors"
-                    aria-label="Previous image"
+                    onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+                    className="p-2 hover:bg-secondary rounded-lg transition-colors"
                   >
-                    <ArrowLeft className="w-4 h-4" />
+                    <Settings className="w-4 h-4 text-muted-foreground" />
                   </button>
-                  <button
-                    onClick={() =>
-                      setSelectedImageIndex(
-                        (prev) => (prev + 1) % images.length
-                      )
-                    }
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-background/80 hover:bg-background rounded-full shadow-lg transition-colors"
-                    aria-label="Next image"
-                  >
-                    <ArrowLeft className="w-4 h-4 rotate-180" />
-                  </button>
-                </>
-              )}
+                  {showSettingsMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowSettingsMenu(false)} />
+                      <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-xl shadow-xl z-50 p-2">
+                        <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Visibility
+                        </div>
+                        <button
+                          onClick={() => {
+                            updateAppMutation.mutate({ is_published: false });
+                            setShowSettingsMenu(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                            !app.is_published ? "bg-primary/10 text-primary" : "hover:bg-secondary text-foreground"
+                          }`}
+                        >
+                          <Lock className="w-4 h-4" /> Private
+                        </button>
+                        <button
+                          onClick={() => {
+                            updateAppMutation.mutate({ is_published: true });
+                            setShowSettingsMenu(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                            app.is_published ? "bg-primary/10 text-primary" : "hover:bg-secondary text-foreground"
+                          }`}
+                        >
+                          <Globe className="w-4 h-4" /> Public
+                        </button>
+                        <div className="border-t border-border my-2" />
+                        <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Status
+                        </div>
+                        {["in_development", "beta", "completed"].map((status) => (
+                          <button
+                            key={status}
+                            onClick={() => {
+                              updateAppMutation.mutate({ status: status as App["status"] });
+                              setShowSettingsMenu(false);
+                            }}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                              app.status === status ? "bg-primary/10 text-primary" : "hover:bg-secondary text-foreground"
+                            }`}
+                          >
+                            {status === "completed" && <CheckCircle2 className="w-4 h-4" />}
+                            {status === "beta" && <Circle className="w-4 h-4" />}
+                            {status === "in_development" && <TrendingUp className="w-4 h-4" />}
+                            {status.replace("_", " ").charAt(0).toUpperCase() + status.replace("_", " ").slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                <ThemeToggle />
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Thumbnail Strip */}
-          <div className="mt-4">
-            <div
-              className="flex gap-2 overflow-x-auto pb-2"
-              style={{ scrollbarWidth: "thin" }}
-            >
-              {images.map((image: any, idx: number) => (
-                <button
-                  key={image.id || idx}
-                  onClick={() => setSelectedImageIndex(idx)}
-                  className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                    selectedImageIndex === idx
-                      ? "border-primary ring-2 ring-primary/20"
-                      : "border-transparent hover:border-border"
-                  }`}
-                  aria-label={`View image ${idx + 1}`}
-                >
-                  <img
-                    src={getImageUrl(image.image_url)}
-                    alt={`Thumbnail ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-              {isOwner && (
-                <div className="flex-shrink-0">
-                  {showUpload ? (
-                    <div
-                      {...getRootProps()}
-                      className={`w-16 h-16 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
-                        isDragActive
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50"
-                      } ${uploading ? "opacity-50" : ""}`}
-                    >
-                      <input {...getInputProps()} />
-                      {uploading ? (
-                        <span className="text-xs">...</span>
-                      ) : (
-                        <Upload className="w-4 h-4 text-muted-foreground" />
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {/* Stats Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <Card className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{displayProgress}%</p>
+                <p className="text-xs text-muted-foreground">Progress</p>
+              </div>
+            </Card>
+            <Card className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{completedTasks}/{tasks.length}</p>
+                <p className="text-xs text-muted-foreground">Tasks Done</p>
+              </div>
+            </Card>
+            <Card className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <ThumbsUp className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{app.vote_count || 0}</p>
+                <p className="text-xs text-muted-foreground">Votes</p>
+              </div>
+            </Card>
+            <Card className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <MessageSquare className="w-5 h-5 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{app.comment_count || 0}</p>
+                <p className="text-xs text-muted-foreground">Comments</p>
+              </div>
+            </Card>
+          </div>
+
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Image (1/3) */}
+            <div className="space-y-6">
+              {/* Image Gallery */}
+              <Card className="overflow-hidden">
+                <div className="relative bg-secondary/30">
+                  {images.length > 0 ? (
+                    <div className="relative aspect-video flex items-center justify-center p-4">
+                      <img
+                        src={getImageUrl(images[selectedImageIndex]?.image_url)}
+                        alt={app.name}
+                        className="max-h-full max-w-full object-contain rounded-lg"
+                      />
+                      <button
+                        onClick={async () => {
+                          if (confirm("Delete this image?")) {
+                            await api.delete(`/apps/images/${images[selectedImageIndex].id}`);
+                            queryClient.invalidateQueries({ queryKey: ["app", id] });
+                            if (selectedImageIndex >= images.length - 1 && selectedImageIndex > 0) {
+                              setSelectedImageIndex(selectedImageIndex - 1);
+                            }
+                          }
+                        }}
+                        className="absolute top-4 right-4 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors shadow-lg"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      {images.length > 1 && (
+                        <>
+                          <button
+                            onClick={() => setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length)}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-background/90 hover:bg-background rounded-full shadow-lg transition-colors"
+                          >
+                            <ArrowLeft className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => setSelectedImageIndex((prev) => (prev + 1) % images.length)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-background/90 hover:bg-background rounded-full shadow-lg transition-colors"
+                          >
+                            <ArrowLeft className="w-5 h-5 rotate-180" />
+                          </button>
+                        </>
                       )}
                     </div>
                   ) : (
-                    <button
-                      onClick={() => setShowUpload(true)}
-                      className="w-16 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center hover:border-primary/50 transition-colors"
-                      aria-label="Add image"
-                    >
-                      <Plus className="w-4 h-4 text-muted-foreground" />
-                    </button>
+                    <div className="aspect-video flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <ImageIcon className="w-16 h-16 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">No images yet</p>
+                      </div>
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="flex-1 flex items-center justify-center bg-secondary/50 rounded-lg min-h-[300px]">
-          <div className="text-center text-muted-foreground">
-            <ImageIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">No images yet</p>
-            {isOwner && (
-              <div className="mt-3">
-                {showUpload ? (
+                {/* Thumbnails */}
+                <div className="p-3 border-t border-border flex gap-2 overflow-x-auto">
+                  {images.map((image: any, idx: number) => (
+                    <button
+                      key={image.id}
+                      onClick={() => setSelectedImageIndex(idx)}
+                      className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${
+                        selectedImageIndex === idx ? "border-primary" : "border-transparent hover:border-border"
+                      }`}
+                    >
+                      <img src={getImageUrl(image.image_url)} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
                   <div
                     {...getRootProps()}
-                    className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors ${
-                      isDragActive
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/50"
+                    className={`flex-shrink-0 w-14 h-14 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
+                      isDragActive ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
                     }`}
                   >
                     <input {...getInputProps()} />
-                    {uploading ? (
-                      <span className="text-sm">Uploading...</span>
+                    {uploading ? <span className="text-xs">...</span> : <Plus className="w-5 h-5 text-muted-foreground" />}
+                  </div>
+                </div>
+              </Card>
+
+              {/* Meta Info */}
+              <Card className="p-4 mt-6">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  <span>Created {new Date(app.created_at).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
+                  <Calendar className="w-4 h-4" />
+                  <span>Updated {new Date(app.updated_at).toLocaleDateString()}</span>
+                </div>
+                {team && (
+                  <Link
+                    to={`/teams/${team.id}`}
+                    className="flex items-center gap-3 text-sm text-primary mt-3 hover:text-primary/80"
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>{team.name}</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                )}
+              </Card>
+
+              {/* Repository Card */}
+              {editingRepoUrl ? (
+                <Card className="p-6">
+                  <h3 className="font-semibold text-foreground mb-4">Repository URL</h3>
+                  <input
+                    type="url"
+                    value={repoUrlValue}
+                    onChange={(e) => setRepoUrlValue(e.target.value)}
+                    placeholder="https://github.com/owner/repo"
+                    className="w-full px-3 py-2 bg-background border border-primary rounded-lg focus:outline-none mb-3"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        updateAppMutation.mutate({ repository_url: repoUrlValue.trim() || null }, { onSuccess: () => setEditingRepoUrl(false) });
+                      }}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingRepoUrl(false);
+                        setRepoUrlValue(app?.repository_url || "");
+                      }}
+                      className="px-4 py-2 bg-secondary rounded-lg text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </Card>
+              ) : (
+                <RepositorySection
+                  appId={id!}
+                  repositoryUrl={app.repository_url}
+                  isOwner={true}
+                  onEditUrl={() => setEditingRepoUrl(true)}
+                  onDeleteUrl={() => updateAppMutation.mutate({ repository_url: null })}
+                />
+              )}
+            </div>
+
+            {/* Right Column (2/3) - Description, Progress, Tasks, Comments */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Description Card */}
+              <Card className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    {editingField === "short_description" ? (
+                      <input
+                        type="text"
+                        value={editValues.short_description}
+                        onChange={(e) => setEditValues({ ...editValues, short_description: e.target.value })}
+                        onBlur={() => saveField("short_description")}
+                        onKeyDown={(e) => handleKeyDown(e, "short_description")}
+                        autoFocus
+                        className="w-full text-lg bg-background border border-primary rounded px-3 py-2 focus:outline-none"
+                      />
                     ) : (
-                      <>
-                        <Upload className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-xs">
-                          {isDragActive ? "Drop here" : "Click or drag"}
-                        </p>
-                      </>
+                      <p
+                        className="text-lg text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                        onClick={() => startEditing("short_description")}
+                      >
+                        {app.short_description}
+                      </p>
                     )}
                   </div>
-                ) : (
-                  <button
-                    onClick={() => setShowUpload(true)}
-                    className="px-4 py-2 border-2 border-dashed border-border rounded-lg hover:border-primary/50 transition-colors text-sm"
-                  >
-                    <Upload className="w-4 h-4 inline mr-2" />
-                    Add Image
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <Link
-              to={team ? `/teams/${team.id}` : "/"}
-              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              {team ? `Back to ${team.name}` : "Back to Dashboard"}
-            </Link>
-            {pinnedTeam && (!team || pinnedTeam.id !== team.id) && (
-              <Link
-                to={`/teams/${pinnedTeam.id}`}
-                className="hidden sm:inline-flex text-sm text-muted-foreground hover:text-foreground transition-colors items-center gap-1 px-2 py-1 bg-primary/10 rounded-md border border-primary/20"
-              >
-                <Pin className="w-3 h-3 text-primary" />
-                <span className="text-primary font-medium">
-                  {pinnedTeam.name}
-                </span>
-              </Link>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleShare}
-              className="p-2 hover:bg-secondary rounded-lg transition-colors"
-              title="Share app"
-            >
-              <Share2 className="w-4 h-4 text-muted-foreground" />
-            </button>
-            {isOwner && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-                  className="p-2 hover:bg-secondary rounded-lg transition-colors"
-                  title="Settings"
-                >
-                  <Settings className="w-4 h-4 text-muted-foreground" />
-                </button>
-                {showSettingsMenu && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowSettingsMenu(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-64 bg-card border border-border rounded-lg shadow-lg z-50">
-                      <div className="p-4 space-y-4">
-                        <div>
-                          <label className="text-sm text-muted-foreground mb-2 block">
-                            Visibility
-                          </label>
-                          <div className="flex bg-secondary rounded-lg p-1">
-                            <button
-                              onClick={() => {
-                                updateAppMutation.mutate({
-                                  is_published: false,
-                                });
-                                setShowSettingsMenu(false);
-                              }}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors flex-1 ${
-                                !app.is_published
-                                  ? "bg-background text-foreground shadow"
-                                  : "text-muted-foreground hover:text-foreground"
-                              }`}
-                            >
-                              <Lock className="w-3.5 h-3.5" /> Private
-                            </button>
-                            <button
-                              onClick={() => {
-                                updateAppMutation.mutate({
-                                  is_published: true,
-                                });
-                                setShowSettingsMenu(false);
-                              }}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors flex-1 ${
-                                app.is_published
-                                  ? "bg-background text-foreground shadow"
-                                  : "text-muted-foreground hover:text-foreground"
-                              }`}
-                            >
-                              <Globe className="w-3.5 h-3.5" /> Public
-                            </button>
-                          </div>
-                        </div>
-                        {team && (
-                          <div>
-                            <label className="text-sm text-muted-foreground mb-2 block">
-                              Team
-                            </label>
-                            <Link
-                              to={`/teams/${team.id}`}
-                              onClick={() => setShowSettingsMenu(false)}
-                              className="flex items-center gap-2 p-3 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors"
-                            >
-                              <Users className="w-4 h-4 text-primary" />
-                              <span className="text-sm text-foreground">
-                                {team.name}
-                              </span>
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-            <ThemeToggle />
-          </div>
-        </div>
-
-        {/* OWNER VIEW - Two Column Layout */}
-        {isOwner ? (
-          <>
-            {/* Title Bar */}
-            <Card className="mb-6 p-4">
-              <div className="flex items-center gap-4 flex-wrap">
-                {editingField === "name" ? (
-                  <input
-                    type="text"
-                    value={editValues.name}
-                    onChange={(e) =>
-                      setEditValues({ ...editValues, name: e.target.value })
-                    }
-                    onBlur={() => saveField("name")}
-                    onKeyDown={(e) => handleKeyDown(e, "name")}
-                    autoFocus
-                    className="text-2xl font-bold bg-background border border-primary rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                ) : (
-                  <div className="flex items-center gap-2 group">
-                    <h1 className="text-2xl font-bold text-foreground">
-                      {app.name}
-                    </h1>
+                </div>
+                <div className="border-t border-border pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-foreground">About</h3>
                     <button
-                      onClick={() => startEditing("name")}
-                      className="opacity-30 group-hover:opacity-100 transition-opacity p-1 hover:bg-secondary rounded"
-                      title="Edit name"
+                      onClick={() => startEditing("full_description")}
+                      className="p-1 hover:bg-secondary rounded transition-colors"
                     >
                       <Pencil className="w-4 h-4 text-muted-foreground" />
                     </button>
                   </div>
-                )}
-                {editingField === "status" ? (
-                  <select
-                    value={editValues.status}
-                    onChange={(e) => {
-                      const newStatus = e.target.value as App["status"];
-                      setEditValues({ ...editValues, status: newStatus });
-                      updateAppMutation.mutate(
-                        { status: newStatus },
-                        { onSuccess: () => setEditingField(null) }
-                      );
-                    }}
-                    autoFocus
-                    className={`px-2 py-1 rounded text-xs font-medium border bg-background focus:outline-none focus:ring-2 focus:ring-primary ${getStatusColor(
-                      editValues.status
-                    )}`}
-                  >
-                    <option value="in_development">IN DEVELOPMENT</option>
-                    <option value="beta">BETA</option>
-                    <option value="completed">COMPLETED</option>
-                  </select>
-                ) : (
-                  <div className="flex items-center gap-2 group/status">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium border ${getStatusColor(
-                        app.status
-                      )}`}
-                    >
-                      {app.status?.replace("_", " ").toUpperCase()}
-                    </span>
-                    <button
-                      onClick={() => startEditing("status")}
-                      className="opacity-30 group-hover/status:opacity-100 transition-opacity p-1 hover:bg-secondary rounded"
-                      title="Edit status"
-                    >
-                      <Pencil className="w-3 h-3 text-muted-foreground" />
-                    </button>
-                  </div>
-                )}
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  {app.is_published ? (
-                    <>
-                      <Globe className="w-4 h-4" /> Public
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4" /> Private
-                    </>
-                  )}
-                </div>
-                <span className="text-sm text-muted-foreground ml-auto">
-                  Updated {new Date(app.updated_at).toLocaleDateString()}
-                </span>
-              </div>
-            </Card>
-
-            {/* Two Column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-              {/* Left Column - Images & Progress */}
-              <div className="space-y-6">
-                <Card className="p-4">{renderImageGallery()}</Card>
-
-                {/* Progress Section */}
-                <Card className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-foreground">
-                      Progress
-                    </h3>
-                    <div className="flex bg-secondary rounded-lg p-1">
-                      <button
-                        onClick={() =>
-                          updateAppMutation.mutate({ progress_mode: "auto" })
-                        }
-                        className={`px-3 py-1 rounded-md text-xs transition-colors ${
-                          app.progress_mode === "auto"
-                            ? "bg-background text-foreground shadow"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        Auto
-                      </button>
-                      <button
-                        onClick={() =>
-                          updateAppMutation.mutate({ progress_mode: "manual" })
-                        }
-                        className={`px-3 py-1 rounded-md text-xs transition-colors ${
-                          app.progress_mode === "manual"
-                            ? "bg-background text-foreground shadow"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        Manual
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="flex-1">
-                      <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
-                        <div
-                          className={`h-full transition-all duration-300 ${
-                            displayProgress >= 80
-                              ? "bg-green-500"
-                              : displayProgress >= 50
-                              ? "bg-yellow-500"
-                              : "bg-primary"
-                          }`}
-                          style={{ width: `${displayProgress}%` }}
-                        />
+                  {editingField === "full_description" ? (
+                    <div className="space-y-3">
+                      <textarea
+                        value={editValues.full_description}
+                        onChange={(e) => setEditValues({ ...editValues, full_description: e.target.value })}
+                        rows={6}
+                        className="w-full bg-background border border-primary rounded-lg px-3 py-2 text-foreground focus:outline-none resize-y"
+                        onKeyDown={(e) => e.key === "Escape" && cancelEditing()}
+                      />
+                      <div className="flex gap-2">
+                        <button onClick={() => saveField("full_description")} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm">
+                          Save
+                        </button>
+                        <button onClick={cancelEditing} className="px-4 py-2 bg-secondary text-foreground rounded-lg text-sm">
+                          Cancel
+                        </button>
                       </div>
                     </div>
-                    <span className="text-xl font-bold text-foreground">
-                      {displayProgress}%
+                  ) : (
+                    <div className={`text-sm text-muted-foreground whitespace-pre-wrap ${isDescriptionExpanded ? "" : "line-clamp-4"}`}>
+                      {app.full_description || <span className="italic">No description. Click the pencil to add one.</span>}
+                    </div>
+                  )}
+                  {app.full_description && app.full_description.length > 200 && editingField !== "full_description" && (
+                    <button
+                      onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                      className="mt-2 text-sm text-primary hover:text-primary/80 flex items-center gap-1"
+                    >
+                      {isDescriptionExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      {isDescriptionExpanded ? "Show less" : "Show more"}
+                    </button>
+                  )}
+                </div>
+              </Card>
+
+              {/* Progress and Tasks Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Progress Card */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-foreground">Progress</h3>
+                  <div className="flex bg-secondary rounded-lg p-0.5">
+                    <button
+                      onClick={() => updateAppMutation.mutate({ progress_mode: "auto" })}
+                      className={`px-3 py-1 rounded-md text-xs transition-colors ${
+                        app.progress_mode === "auto" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                      }`}
+                    >
+                      Auto
+                    </button>
+                    <button
+                      onClick={() => updateAppMutation.mutate({ progress_mode: "manual" })}
+                      className={`px-3 py-1 rounded-md text-xs transition-colors ${
+                        app.progress_mode === "manual" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                      }`}
+                    >
+                      Manual
+                    </button>
+                  </div>
+                </div>
+                <div className="relative pt-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-3xl font-bold text-foreground">{displayProgress}%</span>
+                    <span className="text-xs text-muted-foreground">
+                      {app.progress_mode === "auto" ? "Based on tasks" : "Manual"}
                     </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-500 ${
+                        displayProgress >= 80 ? "bg-green-500" : displayProgress >= 50 ? "bg-yellow-500" : "bg-primary"
+                      }`}
+                      style={{ width: `${displayProgress}%` }}
+                    />
                   </div>
                   {app.progress_mode === "manual" && (
                     <input
@@ -780,445 +724,261 @@ export default function AppDetail({ user }: AppDetailProps) {
                       min="0"
                       max="100"
                       value={app.progress || 0}
-                      onChange={(e) =>
-                        updateAppMutation.mutate({
-                          progress: parseInt(e.target.value),
-                        })
-                      }
-                      className="w-full accent-primary"
+                      onChange={(e) => updateAppMutation.mutate({ progress: parseInt(e.target.value) })}
+                      className="w-full mt-3 accent-primary"
                     />
                   )}
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {app.progress_mode === "auto"
-                      ? "Auto progress based on completed tasks"
-                      : "Manual progress"}
-                  </p>
-                </Card>
-              </div>
-
-              {/* Right Column - Details */}
-              <div className="space-y-6">
-                {/* Description Section */}
-                <Card className="p-6">
-                  <div className="group mb-4">
-                    {editingField === "short_description" ? (
-                      <input
-                        type="text"
-                        value={editValues.short_description}
-                        onChange={(e) =>
-                          setEditValues({
-                            ...editValues,
-                            short_description: e.target.value,
-                          })
-                        }
-                        onBlur={() => saveField("short_description")}
-                        onKeyDown={(e) => handleKeyDown(e, "short_description")}
-                        autoFocus
-                        className="w-full text-lg bg-background border border-primary rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                    ) : (
-                      <div className="flex items-start gap-2 group/edit">
-                        <p className="text-muted-foreground flex-1">
-                          {app.short_description}
-                        </p>
-                        <button
-                          onClick={() => startEditing("short_description")}
-                          className="opacity-30 group-hover/edit:opacity-100 transition-opacity p-1 hover:bg-secondary rounded flex-shrink-0"
-                          title="Edit short description"
-                        >
-                          <Pencil className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="border-t border-border pt-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-lg font-semibold text-foreground">
-                        Description
-                      </h3>
-                      {editingField !== "full_description" && (
-                        <button
-                          onClick={() => startEditing("full_description")}
-                          className="opacity-30 hover:opacity-100 transition-opacity p-1 hover:bg-secondary rounded"
-                          title="Edit description"
-                        >
-                          <Pencil className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                      )}
-                    </div>
-                    {editingField === "full_description" ? (
-                      <div className="space-y-2">
-                        <textarea
-                          value={editValues.full_description}
-                          onChange={(e) =>
-                            setEditValues({
-                              ...editValues,
-                              full_description: e.target.value,
-                            })
-                          }
-                          rows={6}
-                          className="w-full bg-background border border-primary rounded px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-y"
-                          onKeyDown={(e) =>
-                            e.key === "Escape" && cancelEditing()
-                          }
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => saveField("full_description")}
-                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 text-sm"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={cancelEditing}
-                            className="px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 text-sm"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        {app.full_description ? (
-                          <>
-                            <div
-                              className={`text-muted-foreground text-sm whitespace-pre-wrap ${
-                                isDescriptionExpanded ? "" : "line-clamp-4"
-                              }`}
-                            >
-                              {app.full_description}
-                            </div>
-                            {app.full_description.length > 150 && (
-                              <button
-                                onClick={() =>
-                                  setIsDescriptionExpanded(
-                                    !isDescriptionExpanded
-                                  )
-                                }
-                                className="mt-2 text-sm text-primary hover:text-primary/80 inline-flex items-center gap-1"
-                              >
-                                {isDescriptionExpanded ? (
-                                  <>
-                                    <ChevronUp className="w-4 h-4" /> Show less
-                                  </>
-                                ) : (
-                                  <>
-                                    <ChevronDown className="w-4 h-4" /> Show
-                                    more
-                                  </>
-                                )}
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          <p className="text-muted-foreground text-sm italic">
-                            No description yet. Click the pencil icon to add
-                            one.
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </Card>
-
-                {/* Tasks Section */}
-                <Card className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-foreground">
-                      Tasks
-                    </h3>
-                    <span className="text-sm text-muted-foreground">
-                      {completedTasks} / {tasks.length} completed
-                    </span>
-                  </div>
-                  <div className="flex gap-2 mb-4">
-                    <input
-                      type="text"
-                      value={newTaskTitle}
-                      onChange={(e) => setNewTaskTitle(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
-                      placeholder="Add a new task..."
-                      className="flex-1 px-3 py-2 bg-secondary rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                    />
-                    <button
-                      onClick={handleAddTask}
-                      disabled={
-                        !newTaskTitle.trim() || addTaskMutation.isPending
-                      }
-                      className="px-3 py-2 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {tasks.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-4 text-sm">
-                      No tasks yet. Add your first task above.
-                    </p>
-                  ) : (
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {tasks.map((task: AppTask) => (
-                        <div
-                          key={task.id}
-                          className="flex items-center gap-3 p-2 bg-secondary/50 rounded-lg group"
-                        >
-                          <button
-                            onClick={() =>
-                              updateTaskMutation.mutate({
-                                taskId: task.id,
-                                is_completed: !task.is_completed,
-                              })
-                            }
-                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
-                              task.is_completed
-                                ? "bg-primary border-primary text-primary-foreground"
-                                : "border-muted-foreground hover:border-primary"
-                            }`}
-                          >
-                            {task.is_completed && <Check className="w-3 h-3" />}
-                          </button>
-                          <span
-                            className={`flex-1 text-sm ${
-                              task.is_completed
-                                ? "text-muted-foreground line-through"
-                                : "text-foreground"
-                            }`}
-                          >
-                            {task.title}
-                          </span>
-                          <button
-                            onClick={() => deleteTaskMutation.mutate(task.id)}
-                            className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all flex-shrink-0"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </Card>
-
-                {/* Comments Section */}
-                <Card className="p-6">
-                  <CommentSection appId={id!} user={user} />
-                </Card>
-              </div>
-            </div>
-          </>
-        ) : (
-          /* NON-OWNER VIEW - Original Layout */
-          <>
-            {/* Show team info if app belongs to a team */}
-            {team && (
-              <Link to={`/teams/${team.id}`} className="block mb-6">
-                <div className="bg-card rounded-lg border border-border p-4 hover:border-primary/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Users className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Part of team
-                      </p>
-                      <h3 className="font-semibold text-foreground">
-                        {team.name}
-                      </h3>
-                    </div>
-                  </div>
                 </div>
-              </Link>
-            )}
+              </Card>
 
-            {/* Images Section */}
-            <Card className="mb-6 overflow-hidden">
-              {images.length > 0 ? (
-                <>
-                  <div className="relative bg-secondary/50 p-4">
-                    <div className="flex items-center justify-center min-h-[400px] relative">
-                      <img
-                        src={getImageUrl(images[selectedImageIndex]?.image_url)}
-                        alt={`${app.name} - Image ${selectedImageIndex + 1}`}
-                        className="max-h-[400px] max-w-full object-contain rounded-lg"
-                      />
-                      {images.length > 1 && (
-                        <>
-                          <button
-                            onClick={() =>
-                              setSelectedImageIndex(
-                                (prev) =>
-                                  (prev - 1 + images.length) % images.length
-                              )
-                            }
-                            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-background/80 hover:bg-background rounded-full shadow-lg transition-colors"
-                            aria-label="Previous image"
-                          >
-                            <ArrowLeft className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              setSelectedImageIndex(
-                                (prev) => (prev + 1) % images.length
-                              )
-                            }
-                            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-background/80 hover:bg-background rounded-full shadow-lg transition-colors"
-                            aria-label="Next image"
-                          >
-                            <ArrowLeft className="w-5 h-5 rotate-180" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                    <div className="text-center mt-2 text-sm text-muted-foreground">
-                      Image {selectedImageIndex + 1} of {images.length}
-                    </div>
-                  </div>
-                  {images.length > 1 && (
-                    <div className="p-4 border-t border-border">
-                      <div
-                        className="flex gap-2 overflow-x-auto"
-                        style={{ scrollbarWidth: "thin" }}
-                      >
-                        {images.map((image: any, idx: number) => (
-                          <button
-                            key={image.id || idx}
-                            onClick={() => setSelectedImageIndex(idx)}
-                            className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                              selectedImageIndex === idx
-                                ? "border-primary ring-2 ring-primary/20"
-                                : "border-transparent hover:border-border"
-                            }`}
-                            aria-label={`View image ${idx + 1}`}
-                          >
-                            <img
-                              src={getImageUrl(image.image_url)}
-                              alt={`Thumbnail ${idx + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="p-12">
-                  <div className="w-full flex items-center justify-center p-12 text-muted-foreground">
-                    <div className="text-center">
-                      <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                      <p>No images yet</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="p-8">
-                <h1 className="text-4xl font-bold mb-4 text-foreground">
-                  {app.name}
-                </h1>
-                <p className="text-muted-foreground mb-6">
-                  {app.short_description}
-                </p>
-
-                <div className="mb-6">
-                  <h2 className="text-2xl font-semibold text-foreground mb-2">
-                    Description
-                  </h2>
-                  {app.full_description ? (
-                    <>
-                      <div
-                        className={`text-muted-foreground whitespace-pre-wrap ${
-                          isDescriptionExpanded ? "" : "line-clamp-3"
-                        }`}
-                      >
-                        {app.full_description}
-                      </div>
-                      {app.full_description.length > 150 && (
-                        <button
-                          onClick={() =>
-                            setIsDescriptionExpanded(!isDescriptionExpanded)
-                          }
-                          className="mt-2 text-sm text-primary hover:text-primary/80 inline-flex items-center gap-1"
-                        >
-                          {isDescriptionExpanded ? (
-                            <>
-                              <ChevronUp className="w-4 h-4" /> Show less
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown className="w-4 h-4" /> Show more
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-muted-foreground italic">
-                      No description available.
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex items-center space-x-6 flex-wrap">
-                  {user && voteStats ? (
-                    <div className="flex items-center space-x-4">
-                      <button
-                        onClick={() => handleVote("upvote")}
-                        disabled={voteMutation.isPending}
-                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                          voteStats.user_vote === "upvote"
-                            ? "bg-success text-success-foreground"
-                            : "bg-secondary hover:bg-secondary/80 text-foreground"
-                        }`}
-                      >
-                        <ThumbsUp className="w-4 h-4" /> {voteStats.upvotes}
-                      </button>
-                      <span className="text-2xl font-bold text-foreground">
-                        {voteStats.net_score}
-                      </span>
-                      <button
-                        onClick={() => handleVote("downvote")}
-                        disabled={voteMutation.isPending}
-                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                          voteStats.user_vote === "downvote"
-                            ? "bg-destructive text-destructive-foreground"
-                            : "bg-secondary hover:bg-secondary/80 text-foreground"
-                        }`}
-                      >
-                        <ThumbsDown className="w-4 h-4" /> {voteStats.downvotes}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground">
-                      <a href="/login" className="text-primary hover:underline">
-                        Login
-                      </a>{" "}
-                      to vote
-                    </div>
-                  )}
-                  <span className="text-muted-foreground">
-                    Status: {app.status?.replace("_", " ")}
+              {/* Tasks Card */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-foreground">Tasks</h3>
+                  <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
+                    {completedTasks}/{tasks.length}
                   </span>
-                  {app.tags && app.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {app.tags.map((tag: any) => (
-                        <span
-                          key={tag.id}
-                          className="px-2 py-1 bg-primary/20 text-primary rounded-lg text-sm"
+                </div>
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
+                    placeholder="Add task..."
+                    className="flex-1 px-3 py-2 bg-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button
+                    onClick={handleAddTask}
+                    disabled={!newTaskTitle.trim()}
+                    className="p-2 bg-primary text-primary-foreground rounded-lg disabled:opacity-50"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {tasks.length === 0 ? (
+                    <p className="text-center text-muted-foreground text-sm py-6">No tasks yet</p>
+                  ) : (
+                    tasks.map((task: AppTask) => (
+                      <div key={task.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 group">
+                        <button
+                          onClick={() => updateTaskMutation.mutate({ taskId: task.id, is_completed: !task.is_completed })}
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                            task.is_completed ? "bg-primary border-primary" : "border-muted-foreground hover:border-primary"
+                          }`}
                         >
-                          {tag.name}
+                          {task.is_completed && <Check className="w-3 h-3 text-primary-foreground" />}
+                        </button>
+                        <span className={`flex-1 text-sm ${task.is_completed ? "line-through text-muted-foreground" : ""}`}>
+                          {task.title}
                         </span>
-                      ))}
-                    </div>
+                        <button
+                          onClick={() => deleteTaskMutation.mutate(task.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
                   )}
                 </div>
+              </Card>
               </div>
-            </Card>
 
-            <div className="mt-8">
-              <CommentSection appId={id!} user={user} />
+              {/* Comments */}
+              <Card className="p-6">
+                <CommentSection appId={id!} user={user} />
+              </Card>
             </div>
-          </>
-        )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============== NON-OWNER VIEW ==============
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
+        <div className="max-w-6xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <Link
+              to={team ? `/teams/${team.id}` : "/"}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-sm">Back</span>
+            </Link>
+            <div className="flex items-center gap-2">
+              <button onClick={handleShare} className="p-2 hover:bg-secondary rounded-lg transition-colors">
+                <Share2 className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Hero */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Image */}
+          <Card className="overflow-hidden">
+            {images.length > 0 ? (
+              <>
+                <div className="relative aspect-video bg-secondary/30 flex items-center justify-center p-4">
+                  <img
+                    src={getImageUrl(images[selectedImageIndex]?.image_url)}
+                    alt={app.name}
+                    className="max-h-full max-w-full object-contain rounded-lg"
+                  />
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        onClick={() => setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length)}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-background/90 rounded-full shadow-lg"
+                      >
+                        <ArrowLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => setSelectedImageIndex((prev) => (prev + 1) % images.length)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-background/90 rounded-full shadow-lg"
+                      >
+                        <ArrowLeft className="w-5 h-5 rotate-180" />
+                      </button>
+                    </>
+                  )}
+                </div>
+                {images.length > 1 && (
+                  <div className="p-3 border-t border-border flex gap-2 overflow-x-auto">
+                    {images.map((image: any, idx: number) => (
+                      <button
+                        key={image.id}
+                        onClick={() => setSelectedImageIndex(idx)}
+                        className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 ${
+                          selectedImageIndex === idx ? "border-primary" : "border-transparent"
+                        }`}
+                      >
+                        <img src={getImageUrl(image.image_url)} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="aspect-video flex items-center justify-center bg-secondary/30">
+                <ImageIcon className="w-16 h-16 text-muted-foreground/30" />
+              </div>
+            )}
+          </Card>
+
+          {/* Info */}
+          <div className="flex flex-col justify-center">
+            <div className="flex items-center gap-3 mb-4">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(app.status)}`}>
+                {app.status?.replace("_", " ").toUpperCase()}
+              </span>
+              {app.is_published && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Globe className="w-3 h-3" /> Public
+                </span>
+              )}
+            </div>
+            <h1 className="text-4xl font-bold text-foreground mb-3">{app.name}</h1>
+            <p className="text-lg text-muted-foreground mb-6">{app.short_description}</p>
+
+            {/* Stats */}
+            <div className="flex items-center gap-6 mb-6">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{displayProgress}%</p>
+                  <p className="text-xs text-muted-foreground">Progress</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-blue-500/10 rounded-lg">
+                  <ThumbsUp className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{app.vote_count || 0}</p>
+                  <p className="text-xs text-muted-foreground">Votes</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-purple-500/10 rounded-lg">
+                  <MessageSquare className="w-4 h-4 text-purple-500" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{app.comment_count || 0}</p>
+                  <p className="text-xs text-muted-foreground">Comments</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Vote Buttons */}
+            {user && voteStats ? (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => handleVote("upvote")}
+                  disabled={voteMutation.isPending}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    voteStats.user_vote === "upvote" ? "bg-green-500 text-white" : "bg-secondary hover:bg-secondary/80"
+                  }`}
+                >
+                  <ThumbsUp className="w-4 h-4" />
+                  <span>{voteStats.upvotes}</span>
+                </button>
+                <button
+                  onClick={() => handleVote("downvote")}
+                  disabled={voteMutation.isPending}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    voteStats.user_vote === "downvote" ? "bg-red-500 text-white" : "bg-secondary hover:bg-secondary/80"
+                  }`}
+                >
+                  <ThumbsDown className="w-4 h-4" />
+                  <span>{voteStats.downvotes}</span>
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                <Link to="/login" className="text-primary hover:underline">Login</Link> to vote
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Description & Repository */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <Card className="lg:col-span-2 p-6">
+            <h2 className="text-xl font-semibold text-foreground mb-4">About</h2>
+            <div className={`text-muted-foreground whitespace-pre-wrap ${isDescriptionExpanded ? "" : "line-clamp-6"}`}>
+              {app.full_description || <span className="italic">No description available.</span>}
+            </div>
+            {app.full_description && app.full_description.length > 300 && (
+              <button
+                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                className="mt-3 text-sm text-primary hover:text-primary/80 flex items-center gap-1"
+              >
+                {isDescriptionExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {isDescriptionExpanded ? "Show less" : "Show more"}
+              </button>
+            )}
+          </Card>
+
+          {app.repository_url && (
+            <RepositorySection appId={id!} repositoryUrl={app.repository_url} isOwner={false} />
+          )}
+        </div>
+
+        {/* Comments */}
+        <Card className="p-6">
+          <CommentSection appId={id!} user={user} />
+        </Card>
       </div>
     </div>
   );

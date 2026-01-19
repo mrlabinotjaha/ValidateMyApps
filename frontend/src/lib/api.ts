@@ -12,6 +12,9 @@ const API_URL = import.meta.env.VITE_API_URL ||
 // Base URL for uploads/images - use same origin in production
 const UPLOAD_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:8000';
 
+// Export base URL for OAuth redirects
+export const API_BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:8000/api';
+
 /**
  * Get the full URL for an image/upload path
  * Handles both relative paths (/uploads/...) and absolute URLs (http://..., data:...)

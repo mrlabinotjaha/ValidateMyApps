@@ -42,6 +42,7 @@ export interface App {
   is_published: boolean
   progress: number
   progress_mode: ProgressMode
+  repository_url?: string
   creator_id: string
   team_id?: string
   created_at: string
@@ -199,6 +200,7 @@ export interface CreateAppRequest {
   full_description?: string
   status?: AppStatus
   is_published?: boolean
+  repository_url?: string
   team_id?: string
   tag_ids?: string[]
 }
@@ -211,6 +213,41 @@ export interface UpdateAppRequest {
   is_published?: boolean
   progress?: number
   progress_mode?: ProgressMode
+  repository_url?: string | null
   team_id?: string
   tag_ids?: string[]
+}
+
+// Repository/Commits types
+export interface CommitInfo {
+  sha: string
+  full_sha: string
+  message: string
+  author: string
+  date: string
+  url: string
+}
+
+export interface RepoInfo {
+  name: string
+  full_name: string
+  description?: string
+  stars: number
+  forks: number
+  language?: string
+  open_issues: number
+  default_branch: string
+  url: string
+  is_private: boolean
+}
+
+export interface CommitsResponse {
+  commits: CommitInfo[]
+  repo_info?: RepoInfo
+  error?: string
+}
+
+export interface GitHubStatus {
+  connected: boolean
+  username?: string
 }
