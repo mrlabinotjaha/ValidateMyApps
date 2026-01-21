@@ -75,6 +75,7 @@ class AppBase(BaseModel):
     is_published: bool = False
     progress: int = 0
     progress_mode: ProgressMode = ProgressMode.manual
+    repository_url: Optional[str] = None
 
 
 class AppCreate(AppBase):
@@ -90,6 +91,7 @@ class AppUpdate(BaseModel):
     is_published: Optional[bool] = None
     progress: Optional[int] = None
     progress_mode: Optional[ProgressMode] = None
+    repository_url: Optional[str] = None
     team_id: Optional[UUID] = None
     tag_ids: Optional[List[UUID]] = None
 
@@ -129,3 +131,32 @@ class AppListItem(AppBase):
 
     class Config:
         from_attributes = True
+
+
+# Repository/Commits schemas
+class CommitInfo(BaseModel):
+    sha: str
+    full_sha: str
+    message: str
+    author: str
+    date: str
+    url: str
+
+
+class RepoInfo(BaseModel):
+    name: str
+    full_name: str
+    description: Optional[str] = None
+    stars: int
+    forks: int
+    language: Optional[str] = None
+    open_issues: int
+    default_branch: str
+    url: str
+    is_private: bool
+
+
+class CommitsResponse(BaseModel):
+    commits: List[CommitInfo] = []
+    repo_info: Optional[RepoInfo] = None
+    error: Optional[str] = None

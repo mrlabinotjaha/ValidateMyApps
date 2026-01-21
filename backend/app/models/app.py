@@ -32,6 +32,7 @@ class App(Base):
     is_published = Column(Boolean, default=False, nullable=False)
     progress = Column(Integer, default=0, nullable=False)
     progress_mode = Column(Enum(ProgressMode), default=ProgressMode.manual, nullable=False)
+    repository_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

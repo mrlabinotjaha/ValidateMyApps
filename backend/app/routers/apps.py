@@ -9,7 +9,8 @@ from ..models.app import App, AppStatus, AppTag, AppTask
 from ..models.image import Image
 from ..models.tag import Tag
 from ..models.user import User
-from ..schemas.app import AppCreate, AppUpdate, AppResponse, AppListItem, ImageResponse, TagResponse, TaskCreate, TaskUpdate, TaskResponse
+from ..schemas.app import AppCreate, AppUpdate, AppResponse, AppListItem, ImageResponse, TagResponse, TaskCreate, TaskUpdate, TaskResponse, CommitsResponse, CommitInfo, RepoInfo
+from ..services.repository import repository_service
 from ..utils.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/apps", tags=["apps"])
@@ -294,14 +295,68 @@ def delete_app_task(
     app = db.query(App).filter(App.id == app_id).first()
     if not app:
         raise HTTPException(status_code=404, detail="App not found")
-    
+
     if app.creator_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete tasks for this app")
-    
+
     task = db.query(AppTask).filter(AppTask.id == task_id, AppTask.app_id == app_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    
+
     db.delete(task)
     db.commit()
     return None
+
+
+# ==================== REPOSITORY/COMMITS ENDPOINTS ====================
+
+@router.get("/{app_id}/commits", response_model=CommitsResponse)
+async def get_app_commits(
+    app_id: UUID,
+    limit: int = Query(10, ge=1, le=50),
+    db: Session = Depends(get_db)
+):
+    """Fetch recent commits from the app's linked repository."""
+    from ..services.repository import RepositoryService
+
+    app = db.query(App).filter(App.id == app_id).first()
+    if not app:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="App not found"
+        )
+
+    if not app.repository_url:
+        return CommitsResponse(
+            commits=[],
+            error="No repository URL configured"
+        )
+
+    platform, owner, repo = RepositoryService.parse_repo_url(app.repository_url)
+    if not platform or not owner or not repo:
+        return CommitsResponse(
+            commits=[],
+            error="Invalid repository URL format. Supported: GitHub, GitLab"
+        )
+
+    # Get the app creator's GitHub token for private repo access
+    creator = db.query(User).filter(User.id == app.creator_id).first()
+    github_token = creator.github_access_token if creator else None
+
+    # Create service with user's token
+    repo_service = RepositoryService(github_token=github_token)
+
+    # Fetch commits and repo info
+    commits = await repo_service.get_recent_commits(app.repository_url, limit)
+    repo_info = await repo_service.get_repo_info(app.repository_url)
+
+    if not commits and not repo_info:
+        return CommitsResponse(
+            commits=[],
+            error="Repository not found or not accessible. Connect GitHub in Settings for private repos."
+        )
+
+    return CommitsResponse(
+        commits=[CommitInfo(**c) for c in commits],
+        repo_info=RepoInfo(**repo_info) if repo_info else None
+    )

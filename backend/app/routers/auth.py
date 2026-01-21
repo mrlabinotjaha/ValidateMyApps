@@ -202,3 +202,130 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     return RedirectResponse(
         url=f"{settings.frontend_url}/oauth/callback?token={access_token}"
     )
+
+
+# GitHub OAuth endpoints (for connecting GitHub to access private repos)
+@router.get("/github/connect")
+async def github_connect(request: Request, current_user: User = Depends(get_current_user)):
+    """Redirect to GitHub OAuth to connect user's GitHub account."""
+    if not settings.github_client_id:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="GitHub OAuth is not configured"
+        )
+
+    # Store user ID in session for callback
+    request.session["user_id"] = str(current_user.id)
+
+    # Redirect to GitHub OAuth
+    github_auth_url = (
+        f"https://github.com/login/oauth/authorize"
+        f"?client_id={settings.github_client_id}"
+        f"&redirect_uri={settings.github_redirect_uri}"
+        f"&scope=repo,read:user"
+        f"&state={current_user.id}"
+    )
+    return RedirectResponse(url=github_auth_url)
+
+
+@router.get("/github/callback")
+async def github_callback(
+    request: Request,
+    code: str = None,
+    state: str = None,
+    error: str = None,
+    db: Session = Depends(get_db)
+):
+    """Handle GitHub OAuth callback."""
+    if error or not code:
+        return RedirectResponse(
+            url=f"{settings.frontend_url}/settings?error=github_auth_failed"
+        )
+
+    if not settings.github_client_id:
+        return RedirectResponse(
+            url=f"{settings.frontend_url}/settings?error=github_not_configured"
+        )
+
+    try:
+        # Exchange code for access token
+        import httpx
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(
+                "https://github.com/login/oauth/access_token",
+                data={
+                    "client_id": settings.github_client_id,
+                    "client_secret": settings.github_client_secret,
+                    "code": code,
+                    "redirect_uri": settings.github_redirect_uri,
+                },
+                headers={"Accept": "application/json"}
+            )
+            token_data = token_response.json()
+
+        if "error" in token_data:
+            return RedirectResponse(
+                url=f"{settings.frontend_url}/settings?error=github_token_failed"
+            )
+
+        access_token = token_data.get("access_token")
+        if not access_token:
+            return RedirectResponse(
+                url=f"{settings.frontend_url}/settings?error=github_no_token"
+            )
+
+        # Get GitHub user info
+        async with httpx.AsyncClient() as client:
+            user_response = await client.get(
+                "https://api.github.com/user",
+                headers={
+                    "Authorization": f"token {access_token}",
+                    "Accept": "application/vnd.github.v3+json"
+                }
+            )
+            github_user = user_response.json()
+
+        github_username = github_user.get("login")
+
+        # Find user by state (user_id)
+        user = db.query(User).filter(User.id == state).first()
+        if not user:
+            return RedirectResponse(
+                url=f"{settings.frontend_url}/settings?error=user_not_found"
+            )
+
+        # Update user with GitHub token
+        user.github_access_token = access_token
+        user.github_username = github_username
+        db.commit()
+
+        return RedirectResponse(
+            url=f"{settings.frontend_url}/settings?github=connected"
+        )
+
+    except Exception as e:
+        print(f"GitHub OAuth error: {e}")
+        return RedirectResponse(
+            url=f"{settings.frontend_url}/settings?error=github_auth_failed"
+        )
+
+
+@router.post("/github/disconnect")
+async def github_disconnect(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Disconnect user's GitHub account."""
+    current_user.github_access_token = None
+    current_user.github_username = None
+    db.commit()
+    return {"message": "GitHub disconnected successfully"}
+
+
+@router.get("/github/status")
+async def github_status(current_user: User = Depends(get_current_user)):
+    """Check if user has GitHub connected."""
+    return {
+        "connected": bool(current_user.github_access_token),
+        "username": current_user.github_username
+    }

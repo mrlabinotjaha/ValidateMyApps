@@ -32,6 +32,10 @@ class User(Base):
     oauth_id = Column(String, unique=True, index=True, nullable=True)
     is_email_verified = Column(Boolean, default=False, nullable=False)
 
+    # GitHub integration (for accessing private repos)
+    github_access_token = Column(String, nullable=True)
+    github_username = Column(String, nullable=True)
+
     # Relationships
     apps = relationship("App", back_populates="creator", cascade="all, delete-orphan")
     votes = relationship("Vote", back_populates="user", cascade="all, delete-orphan")

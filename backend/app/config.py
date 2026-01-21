@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     google_redirect_uri: str = ""
     frontend_url: str = "http://localhost:5173"
 
+    # GitHub OAuth (for users to connect their GitHub accounts)
+    github_client_id: str = ""
+    github_client_secret: str = ""
+    github_redirect_uri: str = ""
+
     class Config:
         env_file = ".env"
         case_sensitive = False
@@ -69,6 +74,13 @@ class Settings(BaseSettings):
                 self.google_redirect_uri = f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}/api/auth/google/callback"
             else:
                 self.google_redirect_uri = "http://localhost:8000/api/auth/google/callback"
+
+        # Set GitHub OAuth redirect URI
+        if not self.github_redirect_uri and self.github_client_id:
+            if os.getenv("RAILWAY_PUBLIC_DOMAIN"):
+                self.github_redirect_uri = f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}/api/auth/github/callback"
+            else:
+                self.github_redirect_uri = "http://localhost:8000/api/auth/github/callback"
 
         # Ensure upload directory exists
         os.makedirs(self.upload_dir, exist_ok=True)
