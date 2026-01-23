@@ -7,6 +7,7 @@ import { usePinnedTeam } from '../lib/pinnedTeam'
 import ThemeToggle from '../components/ThemeToggle'
 import NavUser from '../components/NavUser'
 import NotificationBell from '../components/NotificationBell'
+import Logo from '../components/Logo'
 import { Card } from '../components/ui/card'
 
 interface NewTeamProps {
@@ -72,7 +73,7 @@ export default function NewTeam({ user }: NewTeamProps) {
       const teamId = response.data.id
       
       // Navigate to the newly created team
-      navigate(`/teams/${teamId}`)
+      navigate(`/team/${teamId}`)
     } catch (err: any) {
       const errorData = err.response?.data;
       if (errorData) {
@@ -100,12 +101,10 @@ export default function NewTeam({ user }: NewTeamProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-6">
-              <Link to="/" className="text-xl font-bold text-foreground">
-                App Showcase
-              </Link>
+              <Logo />
               <div className="hidden sm:flex items-center gap-4">
                 <Link
-                  to="/teams"
+                  to="/team"
                   className="text-sm font-medium text-foreground inline-flex items-center gap-1"
                 >
                   <FolderKanban className="w-4 h-4" />

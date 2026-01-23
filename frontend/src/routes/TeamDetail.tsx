@@ -8,6 +8,7 @@ import { usePinnedTeam } from '../lib/pinnedTeam'
 import ThemeToggle from '../components/ThemeToggle'
 import NavUser from '../components/NavUser'
 import NotificationBell from '../components/NotificationBell'
+import Logo from '../components/Logo'
 import { Card } from '../components/ui/card'
 import AppCard from '../components/AppCard'
 import { api, getImageUrl } from '../lib/api'
@@ -233,7 +234,7 @@ export default function TeamDetail({ user }: TeamDetailProps) {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Team Not Found</h1>
-          <Link to="/teams" className="text-primary hover:underline">Back to Teams</Link>
+          <Link to="/team" className="text-primary hover:underline">Back to Teams</Link>
         </div>
       </div>
     )
@@ -248,12 +249,10 @@ export default function TeamDetail({ user }: TeamDetailProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-6">
-              <Link to="/" className="text-xl font-bold text-foreground">
-                App Showcase
-              </Link>
+              <Logo />
               <div className="hidden sm:flex items-center gap-4">
                 <Link
-                  to="/teams"
+                  to="/team"
                   className="text-sm font-medium text-foreground inline-flex items-center gap-1"
                 >
                   <FolderKanban className="w-4 h-4" />
@@ -306,7 +305,7 @@ export default function TeamDetail({ user }: TeamDetailProps) {
           <div className="flex justify-between h-12">
             <div className="flex items-center gap-4">
               <Link 
-                to="/teams" 
+                to="/team" 
                 className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
               >
                 <ArrowLeft className="w-4 h-4" />

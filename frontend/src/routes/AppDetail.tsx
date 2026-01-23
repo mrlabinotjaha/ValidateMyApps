@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import NavUser from "../components/NavUser";
 import NotificationBell from "../components/NotificationBell";
+import Logo from "../components/Logo";
 import { api, getImageUrl } from "../lib/api";
 import type { User } from "../lib/auth";
 import type { Team, App, VoteInfo } from "../lib/types";
@@ -314,12 +315,10 @@ export default function AppDetail({ user }: AppDetailProps) {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex items-center gap-6">
-                <Link to="/" className="text-xl font-bold text-foreground">
-                  App Showcase
-                </Link>
+                <Logo />
                 <div className="hidden sm:flex items-center gap-4">
                   <Link
-                    to="/teams"
+                    to="/team"
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
                   >
                     <FolderKanban className="w-4 h-4" />
@@ -358,7 +357,7 @@ export default function AppDetail({ user }: AppDetailProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Link
-                  to={team ? `/team/${team.id}` : "/teams"}
+                  to={team ? `/team/${team.id}` : "/team"}
                   className="p-2 hover:bg-secondary rounded-lg transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
@@ -819,7 +818,7 @@ export default function AppDetail({ user }: AppDetailProps) {
               </Link>
               <div className="hidden sm:flex items-center gap-4">
                 <Link
-                  to="/teams"
+                  to="/team"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
                 >
                   <FolderKanban className="w-4 h-4" />
@@ -870,7 +869,7 @@ export default function AppDetail({ user }: AppDetailProps) {
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <Link
-              to={team ? `/team/${team.id}` : "/teams"}
+              to={team ? `/team/${team.id}` : "/team"}
               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />

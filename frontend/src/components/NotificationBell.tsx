@@ -103,7 +103,7 @@ export default function NotificationBell() {
       return `/team/${notification.related_id}`
     }
     if (notification.type === 'team_invitation') {
-      return '/teams'
+      return '/team'
     }
     return null
   }

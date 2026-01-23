@@ -53,10 +53,10 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/oauth/callback" element={<OAuthCallback onLogin={setUser} />} />
           <Route path="/tv-mode" element={<TVMode />} />
-          {/* /teams is the default home route */}
-          <Route path="/" element={<Projects user={user} />} />
-          <Route path="/teams" element={<Projects user={user} />} />
-          <Route path="/team" element={<Projects user={user} />} />
+          {/* /team is the default home route - requires login */}
+          <Route path="/" element={user ? <Navigate to="/team" /> : <Navigate to="/login" />} />
+          <Route path="/teams" element={user ? <Projects user={user} /> : <Navigate to="/login" />} />
+          <Route path="/team" element={user ? <Projects user={user} /> : <Navigate to="/login" />} />
           <Route path="/public" element={<Dashboard user={user} />} />
           <Route path="/apps/:id" element={<AppDetail user={user} />} />
           <Route

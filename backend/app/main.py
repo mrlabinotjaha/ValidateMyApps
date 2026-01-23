@@ -14,7 +14,7 @@ from .models import user, app, team, image, tag, vote, comment, annotation, app_
 # Create tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="App Showcase API", version="1.0.0")
+app = FastAPI(title="Validate it API", version="1.0.0")
 
 # Session middleware required for OAuth state management
 app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)

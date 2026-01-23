@@ -24,6 +24,7 @@ import { usePinnedTeam } from "../lib/pinnedTeam";
 import ThemeToggle from "../components/ThemeToggle";
 import NavUser from "../components/NavUser";
 import NotificationBell from "../components/NotificationBell";
+import Logo from "../components/Logo";
 import AppCard from "../components/AppCard";
 import { Card } from "../components/ui/card";
 
@@ -226,12 +227,10 @@ export default function Dashboard({ user }: DashboardProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-6">
-              <Link to="/" className="text-xl font-bold text-foreground">
-                App Showcase
-              </Link>
+              <Logo />
               <div className="hidden sm:flex items-center gap-4">
                 <Link
-                  to="/teams"
+                  to="/team"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
                 >
                   <FolderKanban className="w-4 h-4" />
@@ -286,7 +285,7 @@ export default function Dashboard({ user }: DashboardProps) {
             </p>
             <div className="flex gap-4">
               <Link
-                to="/teams"
+                to="/team"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
                 <FolderKanban className="w-5 h-5" />
