@@ -45,7 +45,6 @@ interface ClaimRequest {
 interface AppRequest {
   id: string
   name: string
-  short_description: string
   description?: string
   status: 'open' | 'assigned' | 'in_progress' | 'completed' | 'cancelled'
   requester_id: string
@@ -226,15 +225,12 @@ export default function RequestDetail({ user }: RequestDetailProps) {
                 App Showcase
               </Link>
               <div className="hidden sm:flex items-center gap-4">
-                <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Public Apps
-                </Link>
                 <Link
-                  to="/projects"
+                  to="/teams"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
                 >
                   <FolderKanban className="w-4 h-4" />
-                  Team Projects
+                  Teams
                 </Link>
                 <Link
                   to="/requests"
@@ -243,18 +239,18 @@ export default function RequestDetail({ user }: RequestDetailProps) {
                   <Lightbulb className="w-4 h-4" />
                   App Requests
                 </Link>
-                {pinnedTeam && (
-                  <Link
-                    to={`/teams/${pinnedTeam.id}`}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md border border-primary/20"
-                  >
-                    <Pin className="w-3 h-3 text-primary" />
-                    <span className="text-primary font-medium">{pinnedTeam.name}</span>
-                  </Link>
-                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {pinnedTeam && (
+                <Link
+                  to={`/team/${pinnedTeam.id}`}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md border border-primary/20"
+                >
+                  <Pin className="w-3 h-3 text-primary" />
+                  <span className="text-primary font-medium">{pinnedTeam.name}</span>
+                </Link>
+              )}
               <ThemeToggle />
               {user && <NotificationBell />}
               {user ? (
@@ -318,8 +314,6 @@ export default function RequestDetail({ user }: RequestDetailProps) {
               </div>
             )}
           </div>
-
-          <p className="text-lg text-muted-foreground mb-4">{request.short_description}</p>
 
           {request.description && (
             <div className="prose prose-sm max-w-none text-foreground mb-6">

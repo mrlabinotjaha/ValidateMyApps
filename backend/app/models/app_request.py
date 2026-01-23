@@ -23,7 +23,6 @@ class AppRequest(Base):
 
     # Basic info (similar to app creation)
     name = Column(String, nullable=False)
-    short_description = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
 
     # Request-specific fields

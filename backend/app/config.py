@@ -39,28 +39,31 @@ class Settings(BaseSettings):
         else:
             self.upload_dir = "./uploads"
         
-        # Set allowed origins - include Railway domain
-        origins = ["http://localhost:5173"]
-        
-        # Add Railway public domain if available
-        if os.getenv("RAILWAY_PUBLIC_DOMAIN"):
-            railway_url = f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}"
-            origins.append(railway_url)
-        
-        # For Railway, allow requests from same origin (when frontend is served from backend)
-        if os.getenv("RAILWAY_ENVIRONMENT"):
-            # Allow all origins since we're serving frontend from same domain
-            origins = ["*"]
-        
-        # Set from environment variable if provided (comma-separated)
-        if os.getenv("ALLOWED_ORIGINS"):
-            env_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS").split(",")]
-            if "*" in env_origins:
+        # Set allowed origins - only if not already set from env
+        if not self.allowed_origins:
+            origins = ["http://localhost:5173"]
+
+            # Add Railway public domain if available
+            if os.getenv("RAILWAY_PUBLIC_DOMAIN"):
+                railway_url = f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}"
+                origins.append(railway_url)
+
+            # For Railway, allow requests from same origin (when frontend is served from backend)
+            if os.getenv("RAILWAY_ENVIRONMENT"):
+                # Allow all origins since we're serving frontend from same domain
                 origins = ["*"]
-            else:
-                origins.extend(env_origins)
-        
-        self.allowed_origins = origins
+
+            self.allowed_origins = origins
+        else:
+            # Add Railway domain if available
+            if os.getenv("RAILWAY_PUBLIC_DOMAIN"):
+                railway_url = f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}"
+                if railway_url not in self.allowed_origins:
+                    self.allowed_origins.append(railway_url)
+
+            # For Railway, allow all origins
+            if os.getenv("RAILWAY_ENVIRONMENT"):
+                self.allowed_origins = ["*"]
 
         # Set frontend URL for OAuth redirects
         if os.getenv("FRONTEND_URL"):

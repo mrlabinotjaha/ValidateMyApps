@@ -84,7 +84,9 @@ class RepositoryService:
         if not platform or not owner or not repo:
             return []
 
-        cache_key = f"{platform}:{owner}/{repo}"
+        # Include token presence in cache key so authenticated requests are cached separately
+        auth_suffix = ":auth" if self.github_token else ":noauth"
+        cache_key = f"{platform}:{owner}/{repo}{auth_suffix}"
 
         # Check cache
         if cache_key in _commit_cache:
@@ -120,6 +122,10 @@ class RepositoryService:
                     timeout=10.0
                 )
 
+                print(f"[GitHub Commits] {owner}/{repo} - Status: {response.status_code}")
+                if response.status_code != 200:
+                    print(f"[GitHub Commits] Error response: {response.text[:500]}")
+
                 if response.status_code == 200:
                     commits = response.json()
                     return [
@@ -134,7 +140,8 @@ class RepositoryService:
                         for c in commits
                     ]
                 return []
-        except Exception:
+        except Exception as e:
+            print(f"[GitHub Commits] Exception: {e}")
             return []
 
     async def _fetch_gitlab_commits(
@@ -179,7 +186,9 @@ class RepositoryService:
         if not platform or not owner or not repo:
             return None
 
-        cache_key = f"{platform}:{owner}/{repo}:info"
+        # Include token presence in cache key so authenticated requests are cached separately
+        auth_suffix = ":auth" if self.github_token else ":noauth"
+        cache_key = f"{platform}:{owner}/{repo}:info{auth_suffix}"
 
         # Check cache
         if cache_key in _repo_cache:

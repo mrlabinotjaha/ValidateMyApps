@@ -9,7 +9,7 @@ from ..models.app import App, AppStatus, AppTag, AppTask
 from ..models.image import Image
 from ..models.tag import Tag
 from ..models.user import User
-from ..schemas.app import AppCreate, AppUpdate, AppResponse, AppListItem, ImageResponse, TagResponse, TaskCreate, TaskUpdate, TaskResponse, CommitsResponse, CommitInfo, RepoInfo
+from ..schemas.app import AppCreate, AppUpdate, AppResponse, AppListItem, ImageResponse, TagResponse, TaskCreate, TaskUpdate, TaskResponse, CommitsResponse, CommitInfo, RepoInfo, GitHubTokenSet
 from ..services.repository import repository_service
 from ..utils.dependencies import get_current_user
 
@@ -45,7 +45,7 @@ def get_apps(
         query = query.filter(
             or_(
                 App.name.ilike(f"%{search}%"),
-                App.short_description.ilike(f"%{search}%")
+                App.full_description.ilike(f"%{search}%")
             )
         )
     
@@ -98,7 +98,31 @@ def get_app(app_id: UUID, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="App not found"
         )
-    return app
+
+    # Build response with has_github_token flag
+    from ..models.vote import Vote, VoteType
+    upvotes = db.query(Vote).filter(Vote.app_id == app.id, Vote.vote_type == VoteType.upvote).count()
+    downvotes = db.query(Vote).filter(Vote.app_id == app.id, Vote.vote_type == VoteType.downvote).count()
+    comment_count = len(app.comments)
+
+    app_dict = {
+        **{c.name: getattr(app, c.name) for c in app.__table__.columns if c.name != 'github_token'},
+        "images": app.images,
+        "tags": app.tags,
+        "tasks": app.tasks,
+        "vote_count": upvotes - downvotes,
+        "upvotes": upvotes,
+        "downvotes": downvotes,
+        "total_votes": upvotes + downvotes,
+        "comment_count": comment_count,
+        "has_github_token": bool(app.github_token),
+        "creator": {
+            "id": app.creator.id,
+            "username": app.creator.username,
+            "full_name": app.creator.full_name
+        } if app.creator else None
+    }
+    return app_dict
 
 
 @router.post("", response_model=AppResponse, status_code=status.HTTP_201_CREATED)
@@ -126,7 +150,6 @@ def create_app(
     
     app = App(
         name=app_data.name,
-        short_description=app_data.short_description,
         full_description=app_data.full_description,
         status=app_data.status,
         is_published=app_data.is_published,
@@ -339,11 +362,13 @@ async def get_app_commits(
             error="Invalid repository URL format. Supported: GitHub, GitLab"
         )
 
-    # Get the app creator's GitHub token for private repo access
-    creator = db.query(User).filter(User.id == app.creator_id).first()
-    github_token = creator.github_access_token if creator else None
+    # Use app's GitHub token first (PAT provided by owner), then fall back to creator's OAuth token
+    github_token = app.github_token
+    if not github_token:
+        creator = db.query(User).filter(User.id == app.creator_id).first()
+        github_token = creator.github_access_token if creator else None
 
-    # Create service with user's token
+    # Create service with token
     repo_service = RepositoryService(github_token=github_token)
 
     # Fetch commits and repo info
@@ -360,3 +385,42 @@ async def get_app_commits(
         commits=[CommitInfo(**c) for c in commits],
         repo_info=RepoInfo(**repo_info) if repo_info else None
     )
+
+
+@router.post("/{app_id}/github-token", status_code=status.HTTP_200_OK)
+def set_github_token(
+    app_id: UUID,
+    token_data: GitHubTokenSet,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Set a GitHub Personal Access Token for fetching private repo commits."""
+    app = db.query(App).filter(App.id == app_id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="App not found")
+
+    if app.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to modify this app")
+
+    app.github_token = token_data.token
+    db.commit()
+    return {"message": "GitHub token set successfully", "has_github_token": True}
+
+
+@router.delete("/{app_id}/github-token", status_code=status.HTTP_200_OK)
+def remove_github_token(
+    app_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Remove the GitHub Personal Access Token from an app."""
+    app = db.query(App).filter(App.id == app_id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="App not found")
+
+    if app.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to modify this app")
+
+    app.github_token = None
+    db.commit()
+    return {"message": "GitHub token removed", "has_github_token": False}

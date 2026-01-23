@@ -24,7 +24,6 @@ class App(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False, index=True)
-    short_description = Column(String, nullable=False)
     full_description = Column(Text, nullable=True)
     creator_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     team_id = Column(UUID(as_uuid=True), ForeignKey("teams.id"), nullable=True)
@@ -33,6 +32,8 @@ class App(Base):
     progress = Column(Integer, default=0, nullable=False)
     progress_mode = Column(Enum(ProgressMode), default=ProgressMode.manual, nullable=False)
     repository_url = Column(String, nullable=True)
+    app_url = Column(String, nullable=True)  # Live demo/app URL
+    github_token = Column(String, nullable=True)  # Encrypted GitHub PAT for private repos
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

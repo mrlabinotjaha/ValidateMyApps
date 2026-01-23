@@ -36,6 +36,10 @@ class User(Base):
     github_access_token = Column(String, nullable=True)
     github_username = Column(String, nullable=True)
 
+    # Password reset
+    password_reset_token = Column(String, nullable=True)
+    password_reset_expires = Column(DateTime, nullable=True)
+
     # Relationships
     apps = relationship("App", back_populates="creator", cascade="all, delete-orphan")
     votes = relationship("Vote", back_populates="user", cascade="all, delete-orphan")

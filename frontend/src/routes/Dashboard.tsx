@@ -15,6 +15,7 @@ import {
   Clock,
   Pin,
   Lightbulb,
+  Globe,
 } from "lucide-react";
 import { api, getImageUrl } from "../lib/api";
 import type { User } from "../lib/auth";
@@ -165,7 +166,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 )}
               </div>
               <p className="text-sm text-muted-foreground truncate">
-                by {ownerLabel} • {app.short_description}
+                by {ownerLabel} • {app.full_description}
               </p>
             </div>
 
@@ -229,15 +230,12 @@ export default function Dashboard({ user }: DashboardProps) {
                 App Showcase
               </Link>
               <div className="hidden sm:flex items-center gap-4">
-                <Link to="/" className="text-sm font-medium text-foreground">
-                  Public Apps
-                </Link>
                 <Link
-                  to="/projects"
+                  to="/teams"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
                 >
                   <FolderKanban className="w-4 h-4" />
-                  Team Projects
+                  Teams
                 </Link>
                 <Link
                   to="/requests"
@@ -246,18 +244,18 @@ export default function Dashboard({ user }: DashboardProps) {
                   <Lightbulb className="w-4 h-4" />
                   App Requests
                 </Link>
-                {pinnedTeam && (
-                  <Link
-                    to={`/teams/${pinnedTeam.id}`}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md border border-primary/20"
-                  >
-                    <Pin className="w-3 h-3 text-primary" />
-                    <span className="text-primary font-medium">{pinnedTeam.name}</span>
-                  </Link>
-                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {pinnedTeam && (
+                <Link
+                  to={`/team/${pinnedTeam.id}`}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md border border-primary/20"
+                >
+                  <Pin className="w-3 h-3 text-primary" />
+                  <span className="text-primary font-medium">{pinnedTeam.name}</span>
+                </Link>
+              )}
               <ThemeToggle />
               {user && <NotificationBell />}
               {user ? (
@@ -288,7 +286,7 @@ export default function Dashboard({ user }: DashboardProps) {
             </p>
             <div className="flex gap-4">
               <Link
-                to="/projects"
+                to="/teams"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
                 <FolderKanban className="w-5 h-5" />

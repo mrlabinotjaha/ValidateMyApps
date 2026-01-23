@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useDropzone } from 'react-dropzone'
-import { Upload, X, Save, ArrowLeft, Image as ImageIcon } from 'lucide-react'
+import { Upload, X, Save, ArrowLeft, Image as ImageIcon, FolderKanban, Lightbulb, Pin } from 'lucide-react'
 import { api } from '../lib/api'
 import type { User } from '../lib/auth'
 import type { App } from '../lib/types'
+import { usePinnedTeam } from '../lib/pinnedTeam'
 import ThemeToggle from '../components/ThemeToggle'
+import NavUser from '../components/NavUser'
+import NotificationBell from '../components/NotificationBell'
 import { Card } from '../components/ui/card'
 import AppCard from '../components/AppCard'
 
@@ -20,7 +23,6 @@ export default function NewApp({ user }: NewAppProps) {
   
   const [formData, setFormData] = useState({
     name: '',
-    short_description: '',
     full_description: '',
     status: 'in_development',
     // Team apps are not published (private to team), public apps are published
@@ -52,11 +54,7 @@ export default function NewApp({ user }: NewAppProps) {
     if (!formData.name.trim()) {
       errors.name = 'App name is required'
     }
-    
-    if (!formData.short_description.trim()) {
-      errors.short_description = 'Short description is required'
-    }
-    
+
     if (images.length === 0) {
       errors.images = 'At least one image is required'
     }
@@ -108,24 +106,66 @@ export default function NewApp({ user }: NewAppProps) {
   }
 
 
+  const { pinnedTeam } = usePinnedTeam()
+
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate(teamId ? `/teams/${teamId}` : '/')}
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-            <h1 className="text-3xl font-bold text-foreground">
-              {teamId ? 'Create Team App' : 'Create New App'}
-            </h1>
+    <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <nav className="bg-card border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center gap-6">
+              <Link to="/" className="text-xl font-bold text-foreground">
+                App Showcase
+              </Link>
+              <div className="hidden sm:flex items-center gap-4">
+                <Link
+                  to="/teams"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+                >
+                  <FolderKanban className="w-4 h-4" />
+                  Teams
+                </Link>
+                <Link
+                  to="/requests"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  App Requests
+                </Link>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {pinnedTeam && (
+                <Link
+                  to={`/team/${pinnedTeam.id}`}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md border border-primary/20"
+                >
+                  <Pin className="w-3 h-3 text-primary" />
+                  <span className="text-primary font-medium">{pinnedTeam.name}</span>
+                </Link>
+              )}
+              <ThemeToggle />
+              <NotificationBell />
+              <NavUser user={user} />
+            </div>
           </div>
-          <ThemeToggle />
+        </div>
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <Link
+            to={teamId ? `/team/${teamId}` : '/team'}
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Link>
+          <h1 className="text-3xl font-bold text-foreground">
+            {teamId ? 'Create Team App' : 'Create New App'}
+          </h1>
         </div>
 
         {error && (
@@ -158,28 +198,7 @@ export default function NewApp({ user }: NewAppProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Short Description *</label>
-                <textarea
-                  rows={2}
-                  placeholder="A brief description of your app..."
-                  value={formData.short_description}
-                  onChange={(e) => {
-                    setFormData({ ...formData, short_description: e.target.value })
-                    if (fieldErrors.short_description) {
-                      setFieldErrors({ ...fieldErrors, short_description: '' })
-                    }
-                  }}
-                  className={`block w-full border ${fieldErrors.short_description ? 'border-destructive' : 'border-border'} bg-background text-foreground rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring placeholder:text-muted-foreground resize-none`}
-                />
-                {fieldErrors.short_description ? (
-                  <p className="mt-1 text-sm text-destructive">{fieldErrors.short_description}</p>
-                ) : (
-                  <p className="mt-1 text-xs text-muted-foreground">This will appear on the app card</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Full Description</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Description</label>
                 <textarea
                   rows={5}
                   placeholder="Detailed description of your app, features, and functionality..."
@@ -201,21 +220,6 @@ export default function NewApp({ user }: NewAppProps) {
                   <option value="completed">Completed</option>
                 </select>
               </div>
-
-              {/* Only show publish option for public apps (non-team) */}
-              {!teamId && (
-                <div>
-                  <label className="flex items-center gap-2 text-foreground cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_published}
-                      onChange={(e) => setFormData({ ...formData, is_published: e.target.checked })}
-                      className="w-4 h-4 rounded border-border accent-primary"
-                    />
-                    <span className="text-sm">Publish immediately</span>
-                  </label>
-                </div>
-              )}
 
               {/* Info for team apps */}
               {teamId && (
@@ -279,7 +283,7 @@ export default function NewApp({ user }: NewAppProps) {
               <div className="flex justify-end gap-3 pt-4 border-t border-border">
                 <button
                   type="button"
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate(teamId ? `/team/${teamId}` : '/team')}
                   className="px-4 py-2 border border-border text-foreground rounded-lg hover:bg-secondary transition-colors"
                 >
                   Cancel
@@ -305,12 +309,11 @@ export default function NewApp({ user }: NewAppProps) {
 
             {/* Preview Card using AppCard component */}
             <div className="max-w-md pointer-events-none">
-              <AppCard 
+              <AppCard
                 app={{
                   id: 'preview',
                   name: formData.name || 'App Name',
-                  short_description: formData.short_description || 'Short description will appear here...',
-                  full_description: formData.full_description || '',
+                  full_description: formData.full_description || 'Description will appear here...',
                   status: formData.status as App['status'],
                   is_published: formData.is_published,
                   images: images.length > 0 ? [{ id: 'preview-img', image_url: imagePreviewUrls[0] }] : [],

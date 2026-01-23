@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
@@ -14,6 +15,9 @@ from .models import user, app, team, image, tag, vote, comment, annotation, app_
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="App Showcase API", version="1.0.0")
+
+# Session middleware required for OAuth state management
+app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
 
 app.add_middleware(
     CORSMiddleware,

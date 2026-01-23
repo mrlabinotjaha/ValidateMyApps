@@ -36,13 +36,13 @@ export interface AppTask {
 export interface App {
   id: string
   name: string
-  short_description: string
   full_description?: string
   status: AppStatus
   is_published: boolean
   progress: number
   progress_mode: ProgressMode
   repository_url?: string
+  app_url?: string
   creator_id: string
   team_id?: string
   created_at: string
@@ -56,6 +56,7 @@ export interface App {
   total_votes?: number
   comment_count: number
   creator?: UserInfo
+  has_github_token?: boolean
 }
 
 // Project types (legacy - will be removed)
@@ -196,24 +197,24 @@ export interface UpdateTodoRequest {
 
 export interface CreateAppRequest {
   name: string
-  short_description: string
   full_description?: string
   status?: AppStatus
   is_published?: boolean
   repository_url?: string
+  app_url?: string
   team_id?: string
   tag_ids?: string[]
 }
 
 export interface UpdateAppRequest {
   name?: string
-  short_description?: string
   full_description?: string
   status?: AppStatus
   is_published?: boolean
   progress?: number
   progress_mode?: ProgressMode
   repository_url?: string | null
+  app_url?: string | null
   team_id?: string
   tag_ids?: string[]
 }

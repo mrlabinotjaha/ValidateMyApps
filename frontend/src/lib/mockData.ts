@@ -40,7 +40,6 @@ export const mockApps = [
   {
     id: "1",
     name: "TaskMaster Pro",
-    short_description: "A powerful task management application with real-time collaboration features.",
     full_description: "TaskMaster Pro is designed to help teams stay organized and productive. Features include kanban boards, time tracking, team collaboration, and integration with popular tools.",
     status: "beta",
     is_published: true,
@@ -80,7 +79,6 @@ export const mockApps = [
   {
     id: "2",
     name: "FitTracker Mobile",
-    short_description: "Track your fitness journey with detailed analytics and personalized workout plans.",
     full_description: "FitTracker Mobile helps you achieve your fitness goals with comprehensive tracking of workouts, nutrition, and progress. Includes social features to share achievements with friends.",
     status: "in_development",
     is_published: true,
@@ -120,7 +118,6 @@ export const mockApps = [
   {
     id: "3",
     name: "CodeReview Hub",
-    short_description: "Streamline your code review process with AI-powered suggestions and automated checks.",
     full_description: "CodeReview Hub makes code reviews faster and more efficient. Features include automated code analysis, suggestion engine, team collaboration tools, and integration with Git.",
     status: "completed",
     is_published: true,
@@ -152,7 +149,6 @@ export const mockApps = [
   {
     id: "4",
     name: "PixelQuest",
-    short_description: "An addictive puzzle game with beautiful pixel art graphics and challenging levels.",
     full_description: "PixelQuest combines classic puzzle mechanics with modern game design. Features 100+ levels, daily challenges, leaderboards, and unlockable achievements.",
     status: "beta",
     is_published: true,
@@ -192,7 +188,6 @@ export const mockApps = [
   {
     id: "5",
     name: "DataViz Platform",
-    short_description: "Create stunning data visualizations with an intuitive drag-and-drop interface.",
     full_description: "DataViz Platform makes data visualization accessible to everyone. Import data from multiple sources, choose from 50+ chart types, and share interactive dashboards with your team.",
     status: "in_development",
     is_published: true,
@@ -224,7 +219,6 @@ export const mockApps = [
   {
     id: "6",
     name: "CloudSync Pro",
-    short_description: "Seamlessly sync your files across all devices with end-to-end encryption and real-time collaboration.",
     full_description: "CloudSync Pro provides secure cloud storage with advanced features like version control, file sharing, and team collaboration. Built with privacy in mind, all files are encrypted before upload.",
     status: "beta",
     is_published: true,
@@ -264,7 +258,6 @@ export const mockApps = [
   {
     id: "7",
     name: "MindMapper",
-    short_description: "Create beautiful mind maps and visual diagrams to organize your thoughts and ideas.",
     full_description: "MindMapper is an intuitive tool for creating mind maps, flowcharts, and visual diagrams. Features include templates, collaboration tools, export to multiple formats, and cloud sync.",
     status: "completed",
     is_published: true,

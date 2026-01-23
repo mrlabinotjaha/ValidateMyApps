@@ -100,7 +100,10 @@ export default function NotificationBell() {
       return `/requests/${notification.related_id}`
     }
     if (notification.related_type === 'team' && notification.related_id) {
-      return `/teams/${notification.related_id}`
+      return `/team/${notification.related_id}`
+    }
+    if (notification.type === 'team_invitation') {
+      return '/teams'
     }
     return null
   }

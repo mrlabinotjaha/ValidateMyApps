@@ -51,7 +51,6 @@ def add_pending_claims_count(app_requests: List[AppRequest], db: Session) -> Lis
         req_dict = {
             "id": req.id,
             "name": req.name,
-            "short_description": req.short_description,
             "description": req.description,
             "status": req.status,
             "requester_id": req.requester_id,
@@ -143,7 +142,6 @@ def create_app_request(
 
     app_request = AppRequest(
         name=request_data.name,
-        short_description=request_data.short_description,
         description=request_data.description,
         team_id=request_data.team_id,
         requester_id=current_user.id,

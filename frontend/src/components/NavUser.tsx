@@ -90,7 +90,7 @@ export default function NavUser({ user }: NavUserProps) {
             <button
               onClick={() => {
                 setIsOpen(false)
-                // TODO: Navigate to settings when implemented
+                navigate('/settings')
               }}
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
             >

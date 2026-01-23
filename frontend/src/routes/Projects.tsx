@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Pin,
   Lightbulb,
+  Globe,
 } from "lucide-react";
 import type { User } from "../lib/auth";
 import type { Team } from "../lib/types";
@@ -113,17 +114,11 @@ export default function Projects({ user }: ProjectsProps) {
               </Link>
               <div className="hidden sm:flex items-center gap-4">
                 <Link
-                  to="/"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Public Apps
-                </Link>
-                <Link
-                  to="/projects"
+                  to="/teams"
                   className="text-sm font-medium text-foreground inline-flex items-center gap-1"
                 >
                   <FolderKanban className="w-4 h-4" />
-                  Team Projects
+                  Teams
                 </Link>
                 <Link
                   to="/requests"
@@ -132,18 +127,18 @@ export default function Projects({ user }: ProjectsProps) {
                   <Lightbulb className="w-4 h-4" />
                   App Requests
                 </Link>
-                {pinnedTeam && (
-                  <Link
-                    to={`/teams/${pinnedTeam.id}`}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md border border-primary/20"
-                  >
-                    <Pin className="w-3 h-3 text-primary" />
-                    <span className="text-primary font-medium">{pinnedTeam.name}</span>
-                  </Link>
-                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {pinnedTeam && (
+                <Link
+                  to={`/team/${pinnedTeam.id}`}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md border border-primary/20"
+                >
+                  <Pin className="w-3 h-3 text-primary" />
+                  <span className="text-primary font-medium">{pinnedTeam.name}</span>
+                </Link>
+              )}
               <ThemeToggle />
               <NotificationBell />
               <NavUser user={user} />
@@ -254,7 +249,7 @@ export default function Projects({ user }: ProjectsProps) {
                   My Teams ({myTeams.length})
                 </h2>
                 <Link
-                  to="/teams/new"
+                  to="/team/new"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
@@ -271,7 +266,7 @@ export default function Projects({ user }: ProjectsProps) {
                       : "You don't have any teams yet. Create your first team to get started."}
                   </p>
                   <Link
-                    to="/teams/new"
+                    to="/team/new"
                     className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
@@ -283,7 +278,7 @@ export default function Projects({ user }: ProjectsProps) {
                   {myTeams.map((team: Team) => (
                     <Link
                       key={team.id}
-                      to={`/teams/${team.id}`}
+                      to={`/team/${team.id}`}
                       className="block"
                     >
                       <Card

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Users, Trash2, Mail, UserPlus, X, Crown, Shield, User as UserIcon, AlertTriangle, FolderKanban, LogIn, Pin, Settings } from 'lucide-react'
+import { ArrowLeft, Users, Trash2, Mail, UserPlus, X, Crown, Shield, User as UserIcon, AlertTriangle, FolderKanban, LogIn, Pin, Settings, Lightbulb } from 'lucide-react'
 import type { User } from '../lib/auth'
 import type { Team, TeamMember, TeamInvitation } from '../lib/types'
 import { usePinnedTeam } from '../lib/pinnedTeam'
@@ -122,7 +122,7 @@ export default function TeamSettings({ user }: TeamSettingsProps) {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Team Not Found</h1>
-          <Link to="/projects" className="text-primary hover:underline">Back to Teams</Link>
+          <Link to="/teams" className="text-primary hover:underline">Back to Teams</Link>
         </div>
       </div>
     )
@@ -134,7 +134,7 @@ export default function TeamSettings({ user }: TeamSettingsProps) {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Access Denied</h1>
           <p className="text-muted-foreground mb-4">Only team owners can access settings.</p>
-          <Link to={`/teams/${id}`} className="text-primary hover:underline">Back to Team</Link>
+          <Link to={`/team/${id}`} className="text-primary hover:underline">Back to Team</Link>
         </div>
       </div>
     )
@@ -151,32 +151,36 @@ export default function TeamSettings({ user }: TeamSettingsProps) {
                 App Showcase
               </Link>
               <div className="hidden sm:flex items-center gap-4">
-                <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Public Apps
-                </Link>
                 <Link
-                  to="/projects"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+                  to="/teams"
+                  className="text-sm font-medium text-foreground inline-flex items-center gap-1"
                 >
                   <FolderKanban className="w-4 h-4" />
-                  Team Projects
+                  Teams
                 </Link>
-                {pinnedTeam && (
-                  <Link
-                    to={`/teams/${pinnedTeam.id}`}
-                    className={`text-sm transition-colors inline-flex items-center gap-1 px-2 py-1 rounded-md border ${
-                      pinnedTeam.id === id
-                        ? 'bg-primary/20 border-primary/40 text-primary font-medium'
-                        : 'bg-primary/10 border-primary/20 text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <Pin className="w-3 h-3 text-primary" />
-                    <span className="text-primary font-medium">{pinnedTeam.name}</span>
-                  </Link>
-                )}
+                <Link
+                  to="/requests"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  App Requests
+                </Link>
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {pinnedTeam && (
+                <Link
+                  to={`/team/${pinnedTeam.id}`}
+                  className={`text-sm transition-colors inline-flex items-center gap-1 px-2 py-1 rounded-md border ${
+                    pinnedTeam.id === id
+                      ? 'bg-primary/20 border-primary/40 text-primary font-medium'
+                      : 'bg-primary/10 border-primary/20 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Pin className="w-3 h-3 text-primary" />
+                  <span className="text-primary font-medium">{pinnedTeam.name}</span>
+                </Link>
+              )}
               <ThemeToggle />
               {user ? (
                 <NavUser user={user} />
@@ -200,7 +204,7 @@ export default function TeamSettings({ user }: TeamSettingsProps) {
           <div className="flex justify-between h-12">
             <div className="flex items-center gap-4">
               <Link 
-                to={`/teams/${id}`}
+                to={`/team/${id}`}
                 className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
               >
                 <ArrowLeft className="w-4 h-4" />

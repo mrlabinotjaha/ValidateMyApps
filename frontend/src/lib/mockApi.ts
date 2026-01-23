@@ -14,9 +14,9 @@ export const mockApi = {
       // Handle search param if present
       if (config?.params?.search) {
         const searchTerm = config.params.search.toLowerCase();
-        const filtered = mockApps.filter(app => 
+        const filtered = mockApps.filter(app =>
           app.name.toLowerCase().includes(searchTerm) ||
-          app.short_description.toLowerCase().includes(searchTerm)
+          (app.full_description && app.full_description.toLowerCase().includes(searchTerm))
         );
         return { data: filtered };
       }

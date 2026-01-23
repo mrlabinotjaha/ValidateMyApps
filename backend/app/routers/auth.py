@@ -6,7 +6,7 @@ import re
 
 from ..database import get_db
 from ..models.user import User, UserRole
-from ..schemas.user import UserCreate, UserLogin, UserResponse, Token
+from ..schemas.user import UserCreate, UserLogin, UserResponse, Token, ResetPasswordRequest
 from ..utils.security import verify_password, get_password_hash, create_access_token
 from ..utils.dependencies import get_current_user
 from ..utils.oauth import oauth
@@ -206,16 +206,54 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 
 # GitHub OAuth endpoints (for connecting GitHub to access private repos)
 @router.get("/github/connect")
-async def github_connect(request: Request, current_user: User = Depends(get_current_user)):
-    """Redirect to GitHub OAuth to connect user's GitHub account."""
+async def github_connect(
+    request: Request,
+    token: str = None,
+    db: Session = Depends(get_db)
+):
+    """Redirect to GitHub OAuth to connect user's GitHub account.
+
+    Accepts token as query parameter since this is accessed via direct link.
+    """
+    from ..utils.security import decode_access_token
+    from uuid import UUID
+
     if not settings.github_client_id:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
             detail="GitHub OAuth is not configured"
         )
 
+    # Validate token from query parameter
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token required. Add ?token=YOUR_TOKEN to the URL"
+        )
+
+    payload = decode_access_token(token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        )
+
+    user_id_str = payload.get("sub")
+    if not user_id_str:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload"
+        )
+
+    user = db.query(User).filter(User.id == UUID(user_id_str)).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+
     # Store user ID in session for callback
-    request.session["user_id"] = str(current_user.id)
+    request.session["user_id"] = str(user.id)
 
     # Redirect to GitHub OAuth
     github_auth_url = (
@@ -223,7 +261,7 @@ async def github_connect(request: Request, current_user: User = Depends(get_curr
         f"?client_id={settings.github_client_id}"
         f"&redirect_uri={settings.github_redirect_uri}"
         f"&scope=repo,read:user"
-        f"&state={current_user.id}"
+        f"&state={user.id}"
     )
     return RedirectResponse(url=github_auth_url)
 
@@ -329,3 +367,36 @@ async def github_status(current_user: User = Depends(get_current_user)):
         "connected": bool(current_user.github_access_token),
         "username": current_user.github_username
     }
+
+
+# Password Reset endpoint (simplified for testing - no email verification)
+@router.post("/reset-password")
+def reset_password(request_data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Reset password directly with email and new password."""
+    user = db.query(User).filter(User.email == request_data.email).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No account found with that email"
+        )
+
+    # Check if this is an OAuth-only account
+    if user.oauth_provider and not user.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"This account uses {user.oauth_provider.title()} sign-in. Password cannot be reset."
+        )
+
+    # Validate new password length
+    if len(request_data.new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 6 characters"
+        )
+
+    # Update password
+    user.password_hash = get_password_hash(request_data.new_password)
+    db.commit()
+
+    return {"message": "Password has been reset successfully"}

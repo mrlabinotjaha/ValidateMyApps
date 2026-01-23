@@ -69,13 +69,13 @@ class TaskResponse(TaskBase):
 
 class AppBase(BaseModel):
     name: str
-    short_description: str
     full_description: Optional[str] = None
     status: AppStatus = AppStatus.in_development
     is_published: bool = False
     progress: int = 0
     progress_mode: ProgressMode = ProgressMode.manual
     repository_url: Optional[str] = None
+    app_url: Optional[str] = None
 
 
 class AppCreate(AppBase):
@@ -85,15 +85,19 @@ class AppCreate(AppBase):
 
 class AppUpdate(BaseModel):
     name: Optional[str] = None
-    short_description: Optional[str] = None
     full_description: Optional[str] = None
     status: Optional[AppStatus] = None
     is_published: Optional[bool] = None
     progress: Optional[int] = None
     progress_mode: Optional[ProgressMode] = None
     repository_url: Optional[str] = None
+    app_url: Optional[str] = None
     team_id: Optional[UUID] = None
     tag_ids: Optional[List[UUID]] = None
+
+
+class GitHubTokenSet(BaseModel):
+    token: str
 
 
 class AppResponse(AppBase):
@@ -111,6 +115,7 @@ class AppResponse(AppBase):
     total_votes: Optional[int] = None
     comment_count: Optional[int] = None
     creator: Optional[CreatorInfo] = None
+    has_github_token: bool = False
 
     class Config:
         from_attributes = True

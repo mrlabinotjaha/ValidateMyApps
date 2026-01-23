@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   GitBranch,
   ExternalLink,
@@ -13,7 +13,10 @@ import {
   Trash2,
   Pencil,
   Github,
-  Link2
+  Link2,
+  Key,
+  Check,
+  X
 } from 'lucide-react'
 import { api, API_BASE_URL } from '../lib/api'
 import type { CommitsResponse, CommitInfo, GitHubStatus } from '../lib/types'
@@ -23,6 +26,7 @@ interface RepositorySectionProps {
   appId: string
   repositoryUrl?: string
   isOwner: boolean
+  hasGithubToken?: boolean
   onEditUrl?: () => void
   onDeleteUrl?: () => void
 }
@@ -31,10 +35,36 @@ export default function RepositorySection({
   appId,
   repositoryUrl,
   isOwner,
+  hasGithubToken = false,
   onEditUrl,
   onDeleteUrl
 }: RepositorySectionProps) {
   const [showAllCommits, setShowAllCommits] = useState(false)
+  const [showTokenInput, setShowTokenInput] = useState(false)
+  const [tokenValue, setTokenValue] = useState('')
+  const queryClient = useQueryClient()
+
+  const setTokenMutation = useMutation({
+    mutationFn: async (token: string) => {
+      return api.post(`/apps/${appId}/github-token`, { token })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['app', appId] })
+      queryClient.invalidateQueries({ queryKey: ['commits', appId] })
+      setShowTokenInput(false)
+      setTokenValue('')
+    }
+  })
+
+  const removeTokenMutation = useMutation({
+    mutationFn: async () => {
+      return api.delete(`/apps/${appId}/github-token`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['app', appId] })
+      queryClient.invalidateQueries({ queryKey: ['commits', appId] })
+    }
+  })
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['commits', appId],
@@ -87,7 +117,7 @@ export default function RepositorySection({
   }
 
   return (
-    <Card className="p-6">
+    <Card className="p-6 max-h-[443px] flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <GitBranch className="w-5 h-5" />
@@ -155,30 +185,89 @@ export default function RepositorySection({
         </div>
       )}
 
+      {/* Token Status for owners */}
+      {isOwner && repositoryUrl && (
+        <div className="mb-4 p-3 bg-secondary/30 rounded-lg">
+          {hasGithubToken ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                <Key className="w-4 h-4" />
+                <span>Personal Access Token configured</span>
+              </div>
+              <button
+                onClick={() => {
+                  if (confirm('Remove the GitHub token? This will disable access to private repo commits.')) {
+                    removeTokenMutation.mutate()
+                  }
+                }}
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          ) : showTokenInput ? (
+            <div>
+              <label className="block text-sm font-medium mb-2">GitHub Personal Access Token</label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Create a <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">fine-grained token</a> with read-only access to your repo.
+              </p>
+              <input
+                type="password"
+                value={tokenValue}
+                onChange={(e) => setTokenValue(e.target.value)}
+                placeholder="ghp_xxxxxxxxxxxx"
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-primary text-sm mb-2"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    if (tokenValue.trim()) {
+                      setTokenMutation.mutate(tokenValue.trim())
+                    }
+                  }}
+                  disabled={!tokenValue.trim() || setTokenMutation.isPending}
+                  className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-sm disabled:opacity-50"
+                >
+                  {setTokenMutation.isPending ? 'Saving...' : 'Save Token'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowTokenInput(false)
+                    setTokenValue('')
+                  }}
+                  className="px-3 py-1.5 bg-secondary rounded text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowTokenInput(true)}
+              className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+            >
+              <Key className="w-4 h-4" />
+              Add Personal Access Token for private repo
+            </button>
+          )}
+        </div>
+      )}
+
       {(error || data?.error) && (
         <div className="p-3 bg-destructive/10 rounded-lg">
           <div className="flex items-center gap-2 text-destructive text-sm">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{data?.error || 'Failed to load repository data'}</span>
           </div>
-          {isOwner && data?.error?.includes('private') && (
-            <a
-              href={`${API_BASE_URL}/auth/github/connect`}
-              className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-[#24292e] text-white rounded-lg text-sm hover:bg-[#1b1f23] transition-colors"
-            >
-              <Github className="w-4 h-4" />
-              Connect GitHub for Private Repos
-            </a>
-          )}
         </div>
       )}
 
       {data?.commits && data.commits.length > 0 && (
-        <div>
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">
+        <div className="flex flex-col min-h-0 flex-1">
+          <h4 className="text-sm font-medium text-muted-foreground mb-3 flex-shrink-0">
             Recent Commits
           </h4>
-          <div className="space-y-2">
+          <div className="space-y-2 overflow-y-auto flex-1">
             {(showAllCommits ? data.commits : data.commits.slice(0, 5)).map((commit: CommitInfo) => (
               <a
                 key={commit.full_sha}

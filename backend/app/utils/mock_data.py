@@ -86,7 +86,6 @@ def create_mock_data():
         apps_data = [
             {
                 "name": "TaskMaster Pro",
-                "short_description": "A powerful task management application with real-time collaboration features.",
                 "full_description": "TaskMaster Pro is designed to help teams stay organized and productive. Features include kanban boards, time tracking, team collaboration, and integration with popular tools.",
                 "status": AppStatus.beta,
                 "is_published": True,
@@ -95,7 +94,6 @@ def create_mock_data():
             },
             {
                 "name": "FitTracker Mobile",
-                "short_description": "Track your fitness journey with detailed analytics and personalized workout plans.",
                 "full_description": "FitTracker Mobile helps you achieve your fitness goals with comprehensive tracking of workouts, nutrition, and progress. Includes social features to share achievements with friends.",
                 "status": AppStatus.in_development,
                 "is_published": True,
@@ -104,7 +102,6 @@ def create_mock_data():
             },
             {
                 "name": "CodeReview Hub",
-                "short_description": "Streamline your code review process with AI-powered suggestions and automated checks.",
                 "full_description": "CodeReview Hub makes code reviews faster and more efficient. Features include automated code analysis, suggestion engine, team collaboration tools, and integration with Git.",
                 "status": AppStatus.completed,
                 "is_published": True,
@@ -113,7 +110,6 @@ def create_mock_data():
             },
             {
                 "name": "PixelQuest",
-                "short_description": "An addictive puzzle game with beautiful pixel art graphics and challenging levels.",
                 "full_description": "PixelQuest combines classic puzzle mechanics with modern game design. Features 100+ levels, daily challenges, leaderboards, and unlockable achievements.",
                 "status": AppStatus.beta,
                 "is_published": True,
@@ -122,7 +118,6 @@ def create_mock_data():
             },
             {
                 "name": "DataViz Platform",
-                "short_description": "Create stunning data visualizations with an intuitive drag-and-drop interface.",
                 "full_description": "DataViz Platform makes data visualization accessible to everyone. Import data from multiple sources, choose from 50+ chart types, and share interactive dashboards with your team.",
                 "status": AppStatus.in_development,
                 "is_published": True,
@@ -131,7 +126,6 @@ def create_mock_data():
             },
             {
                 "name": "SocialConnect API",
-                "short_description": "RESTful API for building social features into your applications.",
                 "full_description": "SocialConnect API provides authentication, user profiles, friend connections, activity feeds, and messaging capabilities. Fully documented with SDKs for popular languages.",
                 "status": AppStatus.completed,
                 "is_published": True,
@@ -139,12 +133,11 @@ def create_mock_data():
                 "tags": [tags[2], tags[6]]
             }
         ]
-        
+
         apps = []
         for app_data in apps_data:
             app = App(
                 name=app_data["name"],
-                short_description=app_data["short_description"],
                 full_description=app_data["full_description"],
                 status=app_data["status"],
                 is_published=app_data["is_published"],

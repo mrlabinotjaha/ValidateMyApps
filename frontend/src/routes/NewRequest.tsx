@@ -24,7 +24,6 @@ export default function NewRequest({ user }: NewRequestProps) {
 
   const [formData, setFormData] = useState({
     name: '',
-    short_description: '',
     description: '',
     assigned_email: '',
     team_id: teamIdFromUrl || '',
@@ -44,7 +43,6 @@ export default function NewRequest({ user }: NewRequestProps) {
     mutationFn: async (data: typeof formData) => {
       const payload = {
         name: data.name,
-        short_description: data.short_description,
         description: data.description || null,
         assigned_email: data.assigned_email || null,
         team_id: data.team_id || null,
@@ -74,10 +72,6 @@ export default function NewRequest({ user }: NewRequestProps) {
       setError('Name is required')
       return
     }
-    if (!formData.short_description.trim()) {
-      setError('Short description is required')
-      return
-    }
 
     createMutation.mutate(formData)
   }
@@ -92,15 +86,12 @@ export default function NewRequest({ user }: NewRequestProps) {
                 App Showcase
               </Link>
               <div className="hidden sm:flex items-center gap-4">
-                <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Public Apps
-                </Link>
                 <Link
-                  to="/projects"
+                  to="/teams"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
                 >
                   <FolderKanban className="w-4 h-4" />
-                  Team Projects
+                  Teams
                 </Link>
                 <Link
                   to="/requests"
@@ -109,18 +100,18 @@ export default function NewRequest({ user }: NewRequestProps) {
                   <Lightbulb className="w-4 h-4" />
                   App Requests
                 </Link>
-                {pinnedTeam && (
-                  <Link
-                    to={`/teams/${pinnedTeam.id}`}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md border border-primary/20"
-                  >
-                    <Pin className="w-3 h-3 text-primary" />
-                    <span className="text-primary font-medium">{pinnedTeam.name}</span>
-                  </Link>
-                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {pinnedTeam && (
+                <Link
+                  to={`/team/${pinnedTeam.id}`}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md border border-primary/20"
+                >
+                  <Pin className="w-3 h-3 text-primary" />
+                  <span className="text-primary font-medium">{pinnedTeam.name}</span>
+                </Link>
+              )}
               <ThemeToggle />
               <NotificationBell />
               <NavUser user={user} />
@@ -168,25 +159,7 @@ export default function NewRequest({ user }: NewRequestProps) {
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Short Description *
-              </label>
-              <input
-                type="text"
-                value={formData.short_description}
-                onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
-                placeholder="Brief summary of what the app should do"
-                maxLength={200}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-ring"
-                required
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {formData.short_description.length}/200 characters
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Full Description
+                Description
               </label>
               <textarea
                 value={formData.description}

@@ -5,6 +5,7 @@ import type { User } from "./lib/auth";
 import { PinnedTeamProvider } from "./lib/pinnedTeam";
 import Login from "./routes/Login";
 import Register from "./routes/Register";
+import ForgotPassword from "./routes/ForgotPassword";
 import OAuthCallback from "./routes/OAuthCallback";
 import Dashboard from "./routes/Dashboard";
 import AppDetail from "./routes/AppDetail";
@@ -17,6 +18,7 @@ import NewTeam from "./routes/NewTeam";
 import AppRequests from "./routes/AppRequests";
 import NewRequest from "./routes/NewRequest";
 import RequestDetail from "./routes/RequestDetail";
+import Settings from "./routes/Settings";
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -48,22 +50,26 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login onLogin={setUser} />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/oauth/callback" element={<OAuthCallback onLogin={setUser} />} />
           <Route path="/tv-mode" element={<TVMode />} />
-          <Route path="/" element={<Dashboard user={user} />} />
+          {/* /teams is the default home route */}
+          <Route path="/" element={<Projects user={user} />} />
+          <Route path="/teams" element={<Projects user={user} />} />
+          <Route path="/team" element={<Projects user={user} />} />
+          <Route path="/public" element={<Dashboard user={user} />} />
           <Route path="/apps/:id" element={<AppDetail user={user} />} />
           <Route
             path="/apps/new"
             element={user ? <NewApp user={user} /> : <Navigate to="/login" />}
           />
-          <Route path="/projects" element={<Projects user={user} />} />
-          <Route path="/teams/:id" element={<TeamDetail user={user} />} />
+          <Route path="/team/:id" element={<TeamDetail user={user} />} />
           <Route
-            path="/teams/:id/settings"
+            path="/team/:id/settings"
             element={user ? <TeamSettings user={user} /> : <Navigate to="/login" />}
           />
           <Route
-            path="/teams/new"
+            path="/team/new"
             element={user ? <NewTeam user={user} /> : <Navigate to="/login" />}
           />
           <Route path="/requests" element={<AppRequests user={user} />} />
@@ -72,6 +78,10 @@ function App() {
             element={user ? <NewRequest user={user} /> : <Navigate to="/login" />}
           />
           <Route path="/requests/:id" element={<RequestDetail user={user} />} />
+          <Route
+            path="/settings"
+            element={user ? <Settings user={user} onUserUpdate={setUser} /> : <Navigate to="/login" />}
+          />
         </Routes>
       </PinnedTeamProvider>
     </BrowserRouter>

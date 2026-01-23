@@ -168,7 +168,7 @@ export default function TeamDetail({ user }: TeamDetailProps) {
                 )}
               </div>
               <p className="text-sm text-muted-foreground truncate">
-                by {ownerLabel} • {app.short_description}
+                by {ownerLabel} • {app.full_description}
               </p>
             </div>
 
@@ -233,7 +233,7 @@ export default function TeamDetail({ user }: TeamDetailProps) {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Team Not Found</h1>
-          <Link to="/projects" className="text-primary hover:underline">Back to Teams</Link>
+          <Link to="/teams" className="text-primary hover:underline">Back to Teams</Link>
         </div>
       </div>
     )
@@ -252,15 +252,12 @@ export default function TeamDetail({ user }: TeamDetailProps) {
                 App Showcase
               </Link>
               <div className="hidden sm:flex items-center gap-4">
-                <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Public Apps
-                </Link>
                 <Link
-                  to="/projects"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+                  to="/teams"
+                  className="text-sm font-medium text-foreground inline-flex items-center gap-1"
                 >
                   <FolderKanban className="w-4 h-4" />
-                  Team Projects
+                  Teams
                 </Link>
                 <Link
                   to="/requests"
@@ -269,22 +266,22 @@ export default function TeamDetail({ user }: TeamDetailProps) {
                   <Lightbulb className="w-4 h-4" />
                   App Requests
                 </Link>
-                {pinnedTeam && (
-                  <Link
-                    to={`/teams/${pinnedTeam.id}`}
-                    className={`text-sm transition-colors inline-flex items-center gap-1 px-2 py-1 rounded-md border ${
-                      pinnedTeam.id === team.id
-                        ? 'bg-primary/20 border-primary/40 text-primary font-medium'
-                        : 'bg-primary/10 border-primary/20 text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <Pin className="w-3 h-3 text-primary" />
-                    <span className="text-primary font-medium">{pinnedTeam.name}</span>
-                  </Link>
-                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {pinnedTeam && (
+                <Link
+                  to={`/team/${pinnedTeam.id}`}
+                  className={`text-sm transition-colors inline-flex items-center gap-1 px-2 py-1 rounded-md border ${
+                    pinnedTeam.id === team.id
+                      ? 'bg-primary/20 border-primary/40 text-primary font-medium'
+                      : 'bg-primary/10 border-primary/20 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Pin className="w-3 h-3 text-primary" />
+                  <span className="text-primary font-medium">{pinnedTeam.name}</span>
+                </Link>
+              )}
               <ThemeToggle />
               {user && <NotificationBell />}
               {user ? (
@@ -309,7 +306,7 @@ export default function TeamDetail({ user }: TeamDetailProps) {
           <div className="flex justify-between h-12">
             <div className="flex items-center gap-4">
               <Link 
-                to="/projects" 
+                to="/teams" 
                 className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -339,7 +336,7 @@ export default function TeamDetail({ user }: TeamDetailProps) {
               </span>
               {isOwner && (
                 <Link
-                  to={`/teams/${id}/settings`}
+                  to={`/team/${id}/settings`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border bg-card hover:bg-muted rounded-md transition-colors"
                 >
                   <Settings className="w-3.5 h-3.5" />
@@ -353,28 +350,6 @@ export default function TeamDetail({ user }: TeamDetailProps) {
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="space-y-6">
-          {/* Team Info */}
-          <Card className="p-6">
-            <p className="text-muted-foreground mb-4">{team.description || 'No description'}</p>
-            <div className="flex items-center justify-between pt-4 border-t border-border">
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>Created by {isOwner ? 'ME' : (team.owner.full_name || team.owner.username)}</span>
-                <span>•</span>
-                <span>Updated {new Date(team.updated_at).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="inline-flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  {team.member_count || 0} members
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <AppWindow className="w-4 h-4" />
-                  {apps.length} apps
-                </span>
-              </div>
-            </div>
-          </Card>
-
           {/* Apps Section */}
           <div>
             <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
@@ -463,7 +438,7 @@ export default function TeamDetail({ user }: TeamDetailProps) {
                   )}
                 </div>
 
-                {isOwner && (
+                {user && (
                   <Link
                     to={`/apps/new?team_id=${id}`}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
@@ -479,12 +454,12 @@ export default function TeamDetail({ user }: TeamDetailProps) {
               <Card className="p-12 text-center">
                 <AppWindow className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground mb-4">
-                  {isOwner
+                  {user
                     ? "No apps yet. Create your first app to get started."
                     : "No apps in this team yet."
                   }
                 </p>
-                {isOwner && (
+                {user && (
                   <Link
                     to={`/apps/new?team_id=${id}`}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"

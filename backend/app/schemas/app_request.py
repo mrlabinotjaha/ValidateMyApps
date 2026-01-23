@@ -15,7 +15,6 @@ class RequestStatus(str, Enum):
 
 class AppRequestBase(BaseModel):
     name: str
-    short_description: str
     description: Optional[str] = None
     team_id: Optional[UUID] = None
 
@@ -26,7 +25,6 @@ class AppRequestCreate(AppRequestBase):
 
 class AppRequestUpdate(BaseModel):
     name: Optional[str] = None
-    short_description: Optional[str] = None
     description: Optional[str] = None
     status: Optional[RequestStatus] = None
 

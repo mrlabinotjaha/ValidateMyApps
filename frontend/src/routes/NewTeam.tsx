@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Save, FolderKanban, Mail, Plus, X } from 'lucide-react'
+import { ArrowLeft, Save, FolderKanban, Mail, Plus, X, Lightbulb, Pin } from 'lucide-react'
 import type { User } from '../lib/auth'
 import { api } from '../lib/api'
+import { usePinnedTeam } from '../lib/pinnedTeam'
 import ThemeToggle from '../components/ThemeToggle'
+import NavUser from '../components/NavUser'
+import NotificationBell from '../components/NotificationBell'
 import { Card } from '../components/ui/card'
 
 interface NewTeamProps {
@@ -12,6 +15,7 @@ interface NewTeamProps {
 
 export default function NewTeam({ user }: NewTeamProps) {
   const navigate = useNavigate()
+  const { pinnedTeam } = usePinnedTeam()
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -91,20 +95,59 @@ export default function NewTeam({ user }: NewTeamProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="max-w-3xl mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <Link
-              to="/projects"
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Link>
-            <h1 className="text-3xl font-bold text-foreground">Create Team</h1>
+    <div className="min-h-screen bg-background">
+      <nav className="bg-card border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center gap-6">
+              <Link to="/" className="text-xl font-bold text-foreground">
+                App Showcase
+              </Link>
+              <div className="hidden sm:flex items-center gap-4">
+                <Link
+                  to="/teams"
+                  className="text-sm font-medium text-foreground inline-flex items-center gap-1"
+                >
+                  <FolderKanban className="w-4 h-4" />
+                  Teams
+                </Link>
+                <Link
+                  to="/requests"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  App Requests
+                </Link>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {pinnedTeam && (
+                <Link
+                  to={`/team/${pinnedTeam.id}`}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md border border-primary/20"
+                >
+                  <Pin className="w-3 h-3 text-primary" />
+                  <span className="text-primary font-medium">{pinnedTeam.name}</span>
+                </Link>
+              )}
+              <ThemeToggle />
+              <NotificationBell />
+              <NavUser user={user} />
+            </div>
           </div>
-          <ThemeToggle />
+        </div>
+      </nav>
+
+      <main className="max-w-3xl mx-auto py-8 px-4">
+        <div className="mb-6">
+          <Link
+            to="/team"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Link>
+          <h1 className="text-2xl font-bold text-foreground">Create Team</h1>
         </div>
 
         {error && (
@@ -217,7 +260,7 @@ export default function NewTeam({ user }: NewTeamProps) {
 
           <div className="flex justify-end gap-3">
             <Link
-              to="/projects"
+              to="/team"
               className="px-6 py-2 border border-border text-foreground rounded-lg hover:bg-secondary transition-colors"
             >
               Cancel
@@ -232,7 +275,7 @@ export default function NewTeam({ user }: NewTeamProps) {
             </button>
           </div>
         </form>
-      </div>
+      </main>
     </div>
   )
 }

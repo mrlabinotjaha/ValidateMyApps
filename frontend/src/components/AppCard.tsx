@@ -88,7 +88,7 @@ export default function AppCard({ app, user }: AppCardProps) {
         </div>
 
         <p className="text-muted-foreground text-sm line-clamp-2 mb-4 min-h-[40px]">
-          {app.short_description}
+          {app.full_description}
         </p>
 
         {/* Progress */}
